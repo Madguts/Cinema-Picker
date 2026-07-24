@@ -1,0 +1,50 @@
+import { useState, useCallback } from 'react';
+
+const VETO_KEY = 'cinema-roulette-vetoes';
+
+function loadVetoes(): string[] {
+  try {
+    const raw = localStorage.getItem(VETO_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as string[];
+  } catch {
+    return [];
+  }
+}
+
+function saveVetoes(vetoes: string[]): void {
+  localStorage.setItem(VETO_KEY, JSON.stringify(vetoes));
+}
+
+export function useVetoes() {
+  const [vetoes, setVetoes] = useState<string[]>(() => loadVetoes());
+
+  const addVeto = useCallback((id: string) => {
+    setVetoes(prev => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      saveVetoes(next);
+      return next;
+    });
+  }, []);
+
+  const removeVeto = useCallback((id: string) => {
+    setVetoes(prev => {
+      const next = prev.filter(v => v !== id);
+      saveVetoes(next);
+      return next;
+    });
+  }, []);
+
+  const toggleVeto = useCallback((id: string) => {
+    setVetoes(prev => {
+      const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id];
+      saveVetoes(next);
+      return next;
+    });
+  }, []);
+
+  const isVetoed = useCallback((id: string) => vetoes.includes(id), [vetoes]);
+
+  return { vetoes, addVeto, removeVeto, toggleVeto, isVetoed };
+}

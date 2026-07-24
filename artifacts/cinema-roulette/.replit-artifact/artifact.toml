@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Cinema Roulette"
+version = "1.0.0"
+id = "artifacts/cinema-roulette"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22038
+
+[services.development]
+run = "pnpm --filter @workspace/cinema-roulette run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cinema-roulette", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/cinema-roulette/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22038"
+BASE_PATH = "/"

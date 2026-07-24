@@ -1,0 +1,41 @@
+interface CertificateBadgeProps {
+  certificate: string | null | undefined;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const certColors: Record<string, { bg: string; text: string; border: string }> = {
+  U: { bg: 'hsl(120 50% 18%)', text: 'hsl(120 70% 70%)', border: 'hsl(120 50% 28%)' },
+  PG: { bg: 'hsl(200 50% 18%)', text: 'hsl(200 70% 70%)', border: 'hsl(200 50% 28%)' },
+  '12A': { bg: 'hsl(38 60% 18%)', text: 'hsl(38 85% 65%)', border: 'hsl(38 60% 28%)' },
+  '12': { bg: 'hsl(38 60% 18%)', text: 'hsl(38 85% 65%)', border: 'hsl(38 60% 28%)' },
+  '15': { bg: 'hsl(20 55% 18%)', text: 'hsl(20 80% 65%)', border: 'hsl(20 55% 28%)' },
+  '18': { bg: 'hsl(0 50% 18%)', text: 'hsl(0 75% 65%)', border: 'hsl(0 50% 28%)' },
+};
+
+const defaultColor = { bg: 'hsl(30 15% 16%)', text: 'hsl(34 20% 55%)', border: 'hsl(30 15% 22%)' };
+
+export function CertificateBadge({ certificate, size = 'md' }: CertificateBadgeProps) {
+  if (!certificate) return null;
+
+  const colors = certColors[certificate.toUpperCase()] || certColors[certificate] || defaultColor;
+
+  const sizeClasses = {
+    sm: 'text-xs px-1.5 py-0.5',
+    md: 'text-xs px-2 py-1',
+    lg: 'text-sm px-2.5 py-1',
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center justify-center font-mono font-medium rounded uppercase tracking-wider ${sizeClasses[size]}`}
+      style={{
+        background: colors.bg,
+        color: colors.text,
+        border: `1px solid ${colors.border}`,
+        lineHeight: 1,
+      }}
+    >
+      {certificate}
+    </span>
+  );
+}
