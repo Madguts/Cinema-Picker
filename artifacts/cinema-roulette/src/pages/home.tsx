@@ -15,10 +15,22 @@ function getDefaultDate(): string {
   return format(startOfDay(new Date()), 'yyyy-MM-dd');
 }
 
+function getDefaultStartTime(): string {
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const defaultMinutes = 17 * 60 + 20; // 17:20
+  const minutes = Math.max(currentMinutes, defaultMinutes);
+  // Round up to nearest 10 minutes to match the slider step
+  const rounded = Math.ceil(minutes / 10) * 10;
+  const h = Math.floor(rounded / 60);
+  const m = rounded % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState(getDefaultDate);
-  const [startTime, setStartTime] = useState('12:00');
-  const [endTime, setEndTime] = useState('22:30');
+  const [startTime, setStartTime] = useState(getDefaultStartTime);
+  const [endTime, setEndTime] = useState('22:00');
   const [pickedMovie, setPickedMovie] = useState<CinemaMovie | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinCount, setSpinCount] = useState(0);
