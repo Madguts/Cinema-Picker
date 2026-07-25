@@ -128,7 +128,7 @@ export default function HomePage() {
       <div className="flex-1 max-w-2xl mx-auto w-full px-4 md:px-6 pb-20">
         {/* Day picker */}
         <div className="mb-8">
-          <div className="text-xs uppercase tracking-widest mb-3 font-medium" style={{ color: '#444' }}>
+          <div className="text-xs uppercase tracking-widest mb-3 font-medium" style={{ color: '#777' }}>
             Select a day
           </div>
           <DayPicker selectedDate={selectedDate} onDateChange={setSelectedDate} />
@@ -139,7 +139,7 @@ export default function HomePage() {
           className="mb-6 p-5 rounded-xl"
           style={{ background: '#111', border: '1px solid #1e1e1e' }}
         >
-          <div className="text-xs uppercase tracking-widest mb-5 font-medium" style={{ color: '#444' }}>
+          <div className="text-xs uppercase tracking-widest mb-5 font-medium" style={{ color: '#777' }}>
             Time window
           </div>
           <TimeRangeSlider
@@ -159,7 +159,7 @@ export default function HomePage() {
                   className="w-1.5 h-1.5 rounded-full"
                   style={{ background: '#FFEA00', boxShadow: '0 0 6px rgba(255,234,0,0.6)' }}
                 />
-                <span className="text-xs font-mono" style={{ color: '#555' }}>
+                <span className="text-xs font-mono" style={{ color: '#888' }}>
                   {eligibleCount} film{eligibleCount !== 1 ? 's' : ''} available
                   {totalMovies > eligibleCount && ` of ${totalMovies}`}
                 </span>

@@ -33,7 +33,7 @@ export function NavBar() {
           </div>
           <div
             className="leading-none mt-0.5 uppercase tracking-widest"
-            style={{ color: '#444', fontSize: '9px' }}
+            style={{ color: '#777', fontSize: '9px' }}
           >
             Omniplex Lisburn
           </div>

@@ -69,7 +69,7 @@ export function TimeRangeSlider({
       {/* Time display */}
       <div className="flex items-center justify-between">
         <div className="text-center">
-          <div className="text-xs uppercase tracking-widest mb-1" style={{ color: '#3a3a3a' }}>From</div>
+          <div className="text-xs uppercase tracking-widest mb-1" style={{ color: '#777' }}>From</div>
           <div
             className="font-mono text-2xl font-medium tracking-tight"
             style={{ color: '#FFEA00' }}
@@ -83,7 +83,7 @@ export function TimeRangeSlider({
           style={{ background: 'linear-gradient(90deg, rgba(255,234,0,0.3), rgba(255,234,0,0.1), rgba(255,234,0,0.3))' }}
         />
         <div className="text-center">
-          <div className="text-xs uppercase tracking-widest mb-1" style={{ color: '#3a3a3a' }}>Until</div>
+          <div className="text-xs uppercase tracking-widest mb-1" style={{ color: '#777' }}>Until</div>
           <div
             className="font-mono text-2xl font-medium tracking-tight"
             style={{ color: '#FFEA00' }}
@@ -141,7 +141,7 @@ export function TimeRangeSlider({
             <span
               key={label}
               className="absolute font-mono transform -translate-x-1/2"
-              style={{ left: `${percent}%`, color: '#333', fontSize: '10px' }}
+              style={{ left: `${percent}%`, color: '#666', fontSize: '10px' }}
             >
               {label}
             </span>

@@ -33,7 +33,7 @@ function ShowtimeButton({ time, endTime, bookingUrl, inWindow }: ShowtimeButtonP
         {time}
       </span>
       {endTime && (
-        <span className="font-mono mt-0.5" style={{ color: '#444', fontSize: '10px' }}>
+        <span className="font-mono mt-0.5" style={{ color: '#777', fontSize: '10px' }}>
           ends {endTime}
         </span>
       )}
@@ -66,7 +66,8 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
     { url: movie.detailUrl },
     {
       query: {
-        enabled: !!movie.detailUrl,
+        // Only fetch detail page if the listing didn't already give us a poster
+        enabled: !!movie.detailUrl && !movie.posterUrl,
         queryKey: getGetMovieDetailsQueryKey({ url: movie.detailUrl }),
       },
     }
@@ -79,8 +80,9 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
     return () => clearTimeout(t);
   }, [movie.id]);
 
-  // Poster: prefer detail page result, fall back to listing-page poster
-  const posterUrl = details?.posterUrl || movie.posterUrl;
+  // Poster: listing-page poster is more reliable; only use detail-page result
+  // if we genuinely have nothing from the listing scrape.
+  const posterUrl = movie.posterUrl || details?.posterUrl;
 
   // All other info comes directly from the listing scrape
   const { certificate, durationMinutes, synopsis, trailerUrl, genres } = movie;
@@ -182,7 +184,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
               <div className="flex items-center gap-3 flex-wrap">
                 {certificate && <CertificateBadge certificate={certificate} size="md" />}
                 {durationMinutes != null && (
-                  <div className="flex items-center gap-1.5" style={{ color: '#555' }}>
+                  <div className="flex items-center gap-1.5" style={{ color: '#888' }}>
                     <Clock size={13} />
                     <span className="font-mono text-sm">{formatDuration(durationMinutes)}</span>
                   </div>
@@ -214,7 +216,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
             {synopsis && (
               <p
                 className="text-sm leading-relaxed line-clamp-4"
-                style={{ color: '#777' }}
+                style={{ color: '#999' }}
                 data-testid="text-synopsis"
               >
                 {synopsis}
@@ -247,7 +249,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
             <div>
               <div
                 className="text-xs uppercase tracking-widest mb-3 font-medium"
-                style={{ color: '#3a3a3a' }}
+                style={{ color: '#666' }}
               >
                 Showtimes — Omniplex Lisburn
               </div>
@@ -270,7 +272,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 self-start hover:opacity-80 transition-opacity"
-              style={{ color: '#3a3a3a', textDecoration: 'none', fontSize: '12px' }}
+              style={{ color: '#666', textDecoration: 'none', fontSize: '12px' }}
               data-testid="link-omniplex"
             >
               <ExternalLink size={11} />
