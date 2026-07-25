@@ -9,8 +9,11 @@
 export interface Showtime {
   /** Show start time e.g. '14:30' */
   time: string;
-  /** Estimated end time e.g. '16:45' */
-  endTime?: string;
+  /**
+     * End time e.g. '16:45'
+     * @nullable
+     */
+  endTime?: string | null;
   /** Direct booking URL for this showtime */
   bookingUrl: string;
 }

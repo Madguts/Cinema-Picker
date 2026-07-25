@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Ban, ExternalLink, Clock, Film, Play } from 'lucide-react';
-import type { CinemaMovie, MovieDetails } from '@workspace/api-client-react';
+import { Ban, ExternalLink, Clock, Film, Play, Tag } from 'lucide-react';
+import type { CinemaMovie } from '@workspace/api-client-react';
 import { useGetMovieDetails, getGetMovieDetailsQueryKey } from '@workspace/api-client-react';
 import { CertificateBadge } from './CertificateBadge';
 import { timeToMinutes } from '@/hooks/use-time-filter';
 
 interface ShowtimeButtonProps {
   time: string;
-  endTime?: string;
+  endTime?: string | null;
   bookingUrl: string;
   inWindow: boolean;
 }
@@ -21,26 +21,32 @@ function ShowtimeButton({ time, endTime, bookingUrl, inWindow }: ShowtimeButtonP
       data-testid={`booking-link-${time}`}
       className="flex flex-col items-center px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105"
       style={{
-        background: inWindow
-          ? 'linear-gradient(135deg, hsl(38 85% 55% / 0.2), hsl(32 70% 42% / 0.1))'
-          : 'hsl(24 14% 10%)',
-        border: `1px solid ${inWindow ? 'hsl(38 85% 55% / 0.4)' : 'hsl(30 15% 18%)'}`,
+        background: inWindow ? 'rgba(255,234,0,0.12)' : '#111',
+        border: `1px solid ${inWindow ? 'rgba(255,234,0,0.35)' : '#222'}`,
         textDecoration: 'none',
       }}
     >
       <span
         className="font-mono text-sm font-medium"
-        style={{ color: inWindow ? 'hsl(38 85% 65%)' : 'hsl(34 20% 50%)' }}
+        style={{ color: inWindow ? '#FFEA00' : '#666' }}
       >
         {time}
       </span>
       {endTime && (
-        <span className="font-mono text-xs mt-0.5" style={{ color: 'hsl(34 20% 40%)', fontSize: '10px' }}>
+        <span className="font-mono mt-0.5" style={{ color: '#444', fontSize: '10px' }}>
           ends {endTime}
         </span>
       )}
     </a>
   );
+}
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 interface MovieResultProps {
@@ -55,6 +61,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
   const [imageError, setImageError] = useState(false);
   const [visible, setVisible] = useState(false);
 
+  // Only fetch movie-details for the poster; everything else comes from the listing
   const { data: details, isLoading: detailsLoading } = useGetMovieDetails(
     { url: movie.detailUrl },
     {
@@ -72,11 +79,11 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
     return () => clearTimeout(t);
   }, [movie.id]);
 
+  // Poster: prefer detail page result, fall back to listing-page poster
   const posterUrl = details?.posterUrl || movie.posterUrl;
-  const certificate = details?.certificate || movie.certificate;
-  const durationMinutes = details?.durationMinutes || movie.durationMinutes;
-  const synopsis = details?.synopsis;
-  const trailerUrl = details?.trailerUrl;
+
+  // All other info comes directly from the listing scrape
+  const { certificate, durationMinutes, synopsis, trailerUrl, genres } = movie;
 
   function getYouTubeId(url: string | null | undefined): string | null {
     if (!url) return null;
@@ -94,86 +101,74 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
 
   return (
     <div
-      className={`transition-all duration-700 ${isSpinning ? 'animate-card-shuffle' : ''}`}
-      style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(20px)', transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}
+      className={`transition-all duration-700 ${isSpinning ? 'opacity-0 scale-95' : ''}`}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(20px)',
+        transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
     >
       {/* Main result card */}
       <div
         className="relative rounded-xl overflow-hidden"
         style={{
-          background: 'hsl(24 14% 10%)',
-          border: '1px solid hsl(30 15% 18%)',
-          boxShadow: '0 32px 64px hsl(24 12% 4% / 0.8), 0 0 60px hsl(38 85% 55% / 0.06)',
+          background: '#111',
+          border: '1px solid #1e1e1e',
+          boxShadow: '0 32px 64px rgba(0,0,0,0.8), 0 0 60px rgba(255,234,0,0.04)',
         }}
       >
-        {/* Cinematic top band */}
-        <div
-          className="h-1 w-full"
-          style={{ background: 'linear-gradient(90deg, hsl(38 85% 55%), hsl(32 70% 42%), hsl(24 50% 30%))' }}
-        />
+        {/* Omniplex yellow accent bar */}
+        <div className="h-0.5 w-full" style={{ background: '#FFEA00' }} />
 
         <div className="flex flex-col md:flex-row gap-0">
           {/* Poster column */}
           <div className="relative md:w-56 lg:w-64 flex-shrink-0">
-            <div
-              className="aspect-[2/3] md:aspect-auto md:h-full overflow-hidden"
-              style={{ minHeight: '300px' }}
-            >
+            <div className="aspect-[2/3] md:aspect-auto md:h-full overflow-hidden" style={{ minHeight: '300px' }}>
               {posterUrl && !imageError ? (
                 <img
                   src={posterUrl}
                   alt={movie.title}
                   className="w-full h-full object-cover"
                   onError={() => setImageError(true)}
-                  style={{
-                    filter: 'brightness(0.95) contrast(1.05)',
-                    display: 'block',
-                  }}
+                  style={{ filter: 'brightness(0.95) contrast(1.05)', display: 'block' }}
                   data-testid="img-result-poster"
                 />
               ) : (
                 <div
                   className="w-full h-full flex items-center justify-center p-8"
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(24 16% 12%), hsl(24 12% 8%))',
-                    minHeight: '300px',
-                  }}
+                  style={{ background: '#0d0d0d', minHeight: '300px' }}
                 >
-                  <Film size={48} style={{ color: 'hsl(38 40% 30%)' }} />
+                  {detailsLoading ? (
+                    <div style={{ color: '#333' }}>
+                      <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin mx-auto" style={{ borderColor: '#333', borderTopColor: 'transparent' }} />
+                    </div>
+                  ) : (
+                    <Film size={48} style={{ color: '#2a2a2a' }} />
+                  )}
                 </div>
               )}
             </div>
-
-            {/* Poster glow */}
-            <div
-              className="absolute inset-0 pointer-events-none animate-poster-glow"
-              style={{
-                boxShadow: 'inset 0 0 40px hsl(38 85% 55% / 0.05)',
-              }}
-            />
           </div>
 
           {/* Info column */}
           <div className="flex-1 p-6 lg:p-8 flex flex-col gap-5">
-            {/* Title area */}
+            {/* Title + veto */}
             <div>
-              <div className="flex items-start justify-between gap-4 mb-2">
-                <div className="flex-1 min-w-0">
-                  <h2
-                    className="font-serif text-3xl lg:text-4xl font-bold leading-tight"
-                    style={{ color: 'hsl(38 60% 92%)' }}
-                    data-testid="text-result-title"
-                  >
-                    {movie.title}
-                  </h2>
-                </div>
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <h2
+                  className="font-bold text-3xl lg:text-4xl leading-tight"
+                  style={{ color: '#fff' }}
+                  data-testid="text-result-title"
+                >
+                  {movie.title}
+                </h2>
                 <button
                   onClick={() => onVeto(movie.id)}
-                  className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105"
+                  className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:opacity-80"
                   style={{
-                    background: 'hsl(0 40% 12%)',
-                    border: '1px solid hsl(0 40% 20%)',
-                    color: 'hsl(0 65% 58%)',
+                    background: 'rgba(255,60,60,0.08)',
+                    border: '1px solid rgba(255,60,60,0.2)',
+                    color: '#ff6666',
                     fontSize: '13px',
                   }}
                   data-testid="button-veto-result"
@@ -183,31 +178,43 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
                 </button>
               </div>
 
-              {/* Meta */}
+              {/* Meta row: certificate, duration */}
               <div className="flex items-center gap-3 flex-wrap">
                 {certificate && <CertificateBadge certificate={certificate} size="md" />}
-                {durationMinutes && (
-                  <div className="flex items-center gap-1.5" style={{ color: 'hsl(34 20% 50%)' }}>
+                {durationMinutes != null && (
+                  <div className="flex items-center gap-1.5" style={{ color: '#555' }}>
                     <Clock size={13} />
-                    <span className="font-mono text-sm">{durationMinutes}m</span>
-                  </div>
-                )}
-                {detailsLoading && (
-                  <div
-                    className="text-xs font-mono animate-amber-pulse"
-                    style={{ color: 'hsl(38 50% 40%)' }}
-                  >
-                    Loading details...
+                    <span className="font-mono text-sm">{formatDuration(durationMinutes)}</span>
                   </div>
                 )}
               </div>
+
+              {/* Genres */}
+              {genres && genres.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap mt-2">
+                  <Tag size={11} style={{ color: '#444' }} />
+                  {genres.map((g) => (
+                    <span
+                      key={g}
+                      className="text-xs px-2 py-0.5 rounded-full"
+                      style={{
+                        background: '#1a1a1a',
+                        border: '1px solid #272727',
+                        color: '#666',
+                      }}
+                    >
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Synopsis */}
             {synopsis && (
               <p
                 className="text-sm leading-relaxed line-clamp-4"
-                style={{ color: 'hsl(34 20% 58%)' }}
+                style={{ color: '#777' }}
                 data-testid="text-synopsis"
               >
                 {synopsis}
@@ -220,11 +227,11 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
                 href={trailerUrl!}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 self-start px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105"
+                className="inline-flex items-center gap-2 self-start px-4 py-2 rounded-lg transition-all duration-200 hover:opacity-80"
                 style={{
-                  background: 'hsl(0 80% 18%)',
-                  border: '1px solid hsl(0 70% 28%)',
-                  color: 'hsl(0 80% 65%)',
+                  background: 'rgba(255,0,0,0.08)',
+                  border: '1px solid rgba(255,0,0,0.2)',
+                  color: '#ff6666',
                   textDecoration: 'none',
                   fontSize: '13px',
                 }}
@@ -240,7 +247,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
             <div>
               <div
                 className="text-xs uppercase tracking-widest mb-3 font-medium"
-                style={{ color: 'hsl(34 20% 40%)' }}
+                style={{ color: '#3a3a3a' }}
               >
                 Showtimes — Omniplex Lisburn
               </div>
@@ -262,8 +269,8 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
               href={movie.detailUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 self-start"
-              style={{ color: 'hsl(34 20% 42%)', textDecoration: 'none', fontSize: '12px' }}
+              className="inline-flex items-center gap-1.5 self-start hover:opacity-80 transition-opacity"
+              style={{ color: '#3a3a3a', textDecoration: 'none', fontSize: '12px' }}
               data-testid="link-omniplex"
             >
               <ExternalLink size={11} />

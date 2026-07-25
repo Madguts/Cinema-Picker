@@ -23,26 +23,23 @@ export function SpinButton({ onClick, isSpinning, disabled, hasResult }: SpinBut
       onClick={onClick}
       disabled={disabled || isSpinning}
       data-testid="button-spin"
-      className="relative group w-full overflow-hidden rounded-lg transition-all duration-300"
+      className="relative group w-full overflow-hidden rounded-lg transition-all duration-200"
       style={{
-        background: disabled
-          ? 'hsl(24 14% 14%)'
-          : 'linear-gradient(135deg, hsl(38 85% 50%), hsl(32 75% 40%))',
-        border: disabled
-          ? '1px solid hsl(30 15% 20%)'
-          : '1px solid hsl(38 85% 42%)',
-        color: disabled ? 'hsl(34 20% 40%)' : 'hsl(24 20% 8%)',
+        background: disabled ? '#111' : '#FFEA00',
+        border: disabled ? '1px solid #1e1e1e' : '1px solid #FFEA00',
+        color: disabled ? '#333' : '#000',
         padding: '18px 32px',
         cursor: disabled || isSpinning ? 'not-allowed' : 'pointer',
-        boxShadow: disabled ? 'none' : '0 0 40px -8px hsl(38 85% 50% / 0.4), 0 8px 24px hsl(24 12% 4% / 0.6)',
+        boxShadow: disabled ? 'none' : '0 0 40px -8px rgba(255,234,0,0.35), 0 8px 24px rgba(0,0,0,0.6)',
+        opacity: isSpinning ? 0.85 : 1,
       }}
     >
-      {/* Shimmer effect */}
+      {/* Hover shimmer */}
       {!disabled && !isSpinning && (
         <div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           style={{
-            background: 'linear-gradient(105deg, transparent 30%, hsl(38 100% 80% / 0.15) 50%, transparent 70%)',
+            background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%)',
           }}
         />
       )}
@@ -53,11 +50,8 @@ export function SpinButton({ onClick, isSpinning, disabled, hasResult }: SpinBut
           className={isSpinning ? 'animate-spin' : 'transition-transform group-hover:rotate-12'}
           style={{ transition: 'transform 0.3s ease' }}
         />
-        <span
-          className="font-serif text-xl font-bold tracking-wide"
-          style={{ letterSpacing: '0.04em' }}
-        >
-          {isSpinning ? 'Choosing...' : hasResult ? 'Spin Again' : 'Spin the Reel'}
+        <span className="text-xl font-bold tracking-wide">
+          {isSpinning ? 'Choosing…' : hasResult ? 'Spin Again' : 'Spin the Reel'}
         </span>
       </div>
     </button>

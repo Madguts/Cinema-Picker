@@ -5,7 +5,6 @@ import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { NavBar } from '@/components/NavBar';
 import { FilmGrainOverlay } from '@/components/FilmGrainOverlay';
 import HomePage from '@/pages/home';
-import MoviesPage from '@/pages/movies';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient({
@@ -23,7 +22,6 @@ function Router() {
       <NavBar />
       <Switch>
         <Route path="/" component={HomePage} />
-        <Route path="/movies" component={MoviesPage} />
         <Route component={NotFound} />
       </Switch>
     </>

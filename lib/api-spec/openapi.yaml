@@ -58,8 +58,8 @@ paths:
     get:
       operationId: getMovieDetails
       tags: [cinema]
-      summary: Get detailed info for a movie (trailer, poster)
-      description: Fetches the Omniplex movie page and extracts trailer URL and poster
+      summary: Get detailed info for a movie (poster from detail page)
+      description: Fetches the Omniplex movie page and extracts poster URL
       parameters:
         - name: url
           in: query
@@ -69,7 +69,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Movie details including trailer and poster URLs
+          description: Movie details including poster URL
           content:
             application/json:
               schema:
@@ -112,8 +112,8 @@ components:
           type: string
           description: "Show start time e.g. '14:30'"
         endTime:
-          type: string
-          description: "Estimated end time e.g. '16:45'"
+          type: ["string", "null"]
+          description: "End time e.g. '16:45'"
         bookingUrl:
           type: string
           description: Direct booking URL for this showtime
@@ -131,16 +131,27 @@ components:
           type: string
         posterUrl:
           type: ["string", "null"]
-          description: Poster image URL from Omniplex
+          description: Poster image URL
         detailUrl:
           type: string
           description: URL of the movie detail page on omniplexcinemas.co.uk
         durationMinutes:
           type: ["integer", "null"]
-          description: Runtime in minutes if available
+          description: Runtime in minutes
         certificate:
           type: ["string", "null"]
           description: Age rating e.g. 'PG', '12A', '15', '18'
+        genres:
+          type: array
+          items:
+            type: string
+          description: List of genres e.g. ['Action', 'Adventure']
+        synopsis:
+          type: ["string", "null"]
+          description: Short synopsis from the listings page
+        trailerUrl:
+          type: ["string", "null"]
+          description: YouTube trailer URL extracted from the listings page
         showtimes:
           type: array
           items:
@@ -150,6 +161,7 @@ components:
         - title
         - detailUrl
         - showtimes
+        - genres
 
     ShowtimesResponse:
       type: object
@@ -168,19 +180,7 @@ components:
     MovieDetails:
       type: object
       properties:
-        trailerUrl:
-          type: ["string", "null"]
-          description: YouTube or other trailer URL
         posterUrl:
           type: ["string", "null"]
-          description: High-res poster image URL
-        synopsis:
-          type: ["string", "null"]
-          description: Movie synopsis/description
-        certificate:
-          type: ["string", "null"]
-          description: Age rating
-        durationMinutes:
-          type: ["integer", "null"]
-          description: Runtime in minutes
+          description: High-res poster image URL from the movie detail page
       required: []

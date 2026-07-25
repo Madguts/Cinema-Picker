@@ -30,13 +30,16 @@ export const GetShowtimesResponse = zod.object({
   "movies": zod.array(zod.object({
   "id": zod.string().describe('Unique slug derived from the movie title\/URL'),
   "title": zod.string(),
-  "posterUrl": zod.string().nullish().describe('Poster image URL from Omniplex'),
+  "posterUrl": zod.string().nullish().describe('Poster image URL'),
   "detailUrl": zod.string().describe('URL of the movie detail page on omniplexcinemas.co.uk'),
-  "durationMinutes": zod.number().nullish().describe('Runtime in minutes if available'),
+  "durationMinutes": zod.number().nullish().describe('Runtime in minutes'),
   "certificate": zod.string().nullish().describe('Age rating e.g. \'PG\', \'12A\', \'15\', \'18\''),
+  "genres": zod.array(zod.string()).describe('List of genres e.g. [\'Action\', \'Adventure\']'),
+  "synopsis": zod.string().nullish().describe('Short synopsis from the listings page'),
+  "trailerUrl": zod.string().nullish().describe('YouTube trailer URL extracted from the listings page'),
   "showtimes": zod.array(zod.object({
   "time": zod.string().describe('Show start time e.g. \'14:30\''),
-  "endTime": zod.string().optional().describe('Estimated end time e.g. \'16:45\''),
+  "endTime": zod.string().nullish().describe('End time e.g. \'16:45\''),
   "bookingUrl": zod.string().describe('Direct booking URL for this showtime')
 }))
 }))
@@ -44,19 +47,15 @@ export const GetShowtimesResponse = zod.object({
 
 
 /**
- * Fetches the Omniplex movie page and extracts trailer URL and poster
- * @summary Get detailed info for a movie (trailer, poster)
+ * Fetches the Omniplex movie page and extracts poster URL
+ * @summary Get detailed info for a movie (poster from detail page)
  */
 export const GetMovieDetailsQueryParams = zod.object({
   "url": zod.coerce.string().describe('The full URL of the movie page on omniplexcinemas.co.uk')
 })
 
 export const GetMovieDetailsResponse = zod.object({
-  "trailerUrl": zod.string().nullish().describe('YouTube or other trailer URL'),
-  "posterUrl": zod.string().nullish().describe('High-res poster image URL'),
-  "synopsis": zod.string().nullish().describe('Movie synopsis\/description'),
-  "certificate": zod.string().nullish().describe('Age rating'),
-  "durationMinutes": zod.number().nullish().describe('Runtime in minutes')
+  "posterUrl": zod.string().nullish().describe('High-res poster image URL from the movie detail page')
 })
 
 

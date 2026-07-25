@@ -16,8 +16,11 @@ export interface ErrorResponse {
 export interface Showtime {
   /** Show start time e.g. '14:30' */
   time: string;
-  /** Estimated end time e.g. '16:45' */
-  endTime?: string;
+  /**
+     * End time e.g. '16:45'
+     * @nullable
+     */
+  endTime?: string | null;
   /** Direct booking URL for this showtime */
   bookingUrl: string;
 }
@@ -27,14 +30,14 @@ export interface CinemaMovie {
   id: string;
   title: string;
   /**
-     * Poster image URL from Omniplex
+     * Poster image URL
      * @nullable
      */
   posterUrl?: string | null;
   /** URL of the movie detail page on omniplexcinemas.co.uk */
   detailUrl: string;
   /**
-     * Runtime in minutes if available
+     * Runtime in minutes
      * @nullable
      */
   durationMinutes?: number | null;
@@ -43,6 +46,18 @@ export interface CinemaMovie {
      * @nullable
      */
   certificate?: string | null;
+  /** List of genres e.g. ['Action', 'Adventure'] */
+  genres: string[];
+  /**
+     * Short synopsis from the listings page
+     * @nullable
+     */
+  synopsis?: string | null;
+  /**
+     * YouTube trailer URL extracted from the listings page
+     * @nullable
+     */
+  trailerUrl?: string | null;
   showtimes: Showtime[];
 }
 
@@ -54,30 +69,10 @@ export interface ShowtimesResponse {
 
 export interface MovieDetails {
   /**
-     * YouTube or other trailer URL
-     * @nullable
-     */
-  trailerUrl?: string | null;
-  /**
-     * High-res poster image URL
+     * High-res poster image URL from the movie detail page
      * @nullable
      */
   posterUrl?: string | null;
-  /**
-     * Movie synopsis/description
-     * @nullable
-     */
-  synopsis?: string | null;
-  /**
-     * Age rating
-     * @nullable
-     */
-  certificate?: string | null;
-  /**
-     * Runtime in minutes
-     * @nullable
-     */
-  durationMinutes?: number | null;
 }
 
 export type GetShowtimesParams = {

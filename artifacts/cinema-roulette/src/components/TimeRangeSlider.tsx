@@ -13,7 +13,7 @@ interface TimeRangeSliderProps {
 
 const DEFAULT_MIN = '08:00';
 const DEFAULT_MAX = '23:30';
-const DEFAULT_STEP = 30;
+const DEFAULT_STEP = 10;
 
 export function TimeRangeSlider({
   startTime,
@@ -66,13 +66,13 @@ export function TimeRangeSlider({
 
   return (
     <div className="w-full space-y-4">
-      {/* Display */}
+      {/* Time display */}
       <div className="flex items-center justify-between">
         <div className="text-center">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">From</div>
+          <div className="text-xs uppercase tracking-widest mb-1" style={{ color: '#3a3a3a' }}>From</div>
           <div
             className="font-mono text-2xl font-medium tracking-tight"
-            style={{ color: 'hsl(38 85% 55%)' }}
+            style={{ color: '#FFEA00' }}
             data-testid="time-start-display"
           >
             {startTime}
@@ -80,13 +80,13 @@ export function TimeRangeSlider({
         </div>
         <div
           className="flex-1 mx-6 h-px"
-          style={{ background: 'linear-gradient(90deg, hsl(38 85% 55% / 0.4), hsl(38 85% 55% / 0.2), hsl(38 85% 55% / 0.4))' }}
+          style={{ background: 'linear-gradient(90deg, rgba(255,234,0,0.3), rgba(255,234,0,0.1), rgba(255,234,0,0.3))' }}
         />
         <div className="text-center">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Until</div>
+          <div className="text-xs uppercase tracking-widest mb-1" style={{ color: '#3a3a3a' }}>Until</div>
           <div
             className="font-mono text-2xl font-medium tracking-tight"
-            style={{ color: 'hsl(38 85% 55%)' }}
+            style={{ color: '#FFEA00' }}
             data-testid="time-end-display"
           >
             {endTime}
@@ -94,12 +94,11 @@ export function TimeRangeSlider({
         </div>
       </div>
 
-      {/* Slider Track */}
+      {/* Slider track */}
       <div className="time-range-slider relative" ref={containerRef}>
-        {/* Background track */}
         <div
           className="relative h-1.5 rounded-full w-full"
-          style={{ background: 'hsl(30 15% 18%)' }}
+          style={{ background: '#1e1e1e' }}
         >
           {/* Active range fill */}
           <div
@@ -107,7 +106,7 @@ export function TimeRangeSlider({
             style={{
               left: `${startPercent}%`,
               width: `${endPercent - startPercent}%`,
-              background: 'linear-gradient(90deg, hsl(38 85% 55%), hsl(32 70% 45%))',
+              background: '#FFEA00',
             }}
           />
         </div>
@@ -141,12 +140,8 @@ export function TimeRangeSlider({
           {labels.map(({ label, percent }) => (
             <span
               key={label}
-              className="absolute text-xs font-mono transform -translate-x-1/2"
-              style={{
-                left: `${percent}%`,
-                color: 'hsl(34 20% 45%)',
-                fontSize: '10px',
-              }}
+              className="absolute font-mono transform -translate-x-1/2"
+              style={{ left: `${percent}%`, color: '#333', fontSize: '10px' }}
             >
               {label}
             </span>

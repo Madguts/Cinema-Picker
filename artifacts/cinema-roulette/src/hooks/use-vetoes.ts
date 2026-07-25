@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 
+// Vetoes are stored in sessionStorage so they clear when the tab/browser is closed.
 const VETO_KEY = 'cinema-roulette-vetoes';
 
 function loadVetoes(): string[] {
   try {
-    const raw = localStorage.getItem(VETO_KEY);
+    const raw = sessionStorage.getItem(VETO_KEY);
     if (!raw) return [];
     return JSON.parse(raw) as string[];
   } catch {
@@ -13,7 +14,11 @@ function loadVetoes(): string[] {
 }
 
 function saveVetoes(vetoes: string[]): void {
-  localStorage.setItem(VETO_KEY, JSON.stringify(vetoes));
+  try {
+    sessionStorage.setItem(VETO_KEY, JSON.stringify(vetoes));
+  } catch {
+    // sessionStorage may be unavailable in some contexts
+  }
 }
 
 export function useVetoes() {
@@ -44,7 +49,15 @@ export function useVetoes() {
     });
   }, []);
 
+  const clearVetoes = useCallback((ids?: string[]) => {
+    setVetoes(prev => {
+      const next = ids ? prev.filter(v => !ids.includes(v)) : [];
+      saveVetoes(next);
+      return next;
+    });
+  }, []);
+
   const isVetoed = useCallback((id: string) => vetoes.includes(id), [vetoes]);
 
-  return { vetoes, addVeto, removeVeto, toggleVeto, isVetoed };
+  return { vetoes, addVeto, removeVeto, toggleVeto, clearVetoes, isVetoed };
 }

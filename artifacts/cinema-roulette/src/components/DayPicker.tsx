@@ -30,29 +30,27 @@ export function DayPicker({ selectedDate, onDateChange }: DayPickerProps) {
             key={iso}
             onClick={() => onDateChange(iso)}
             data-testid={`day-btn-${iso}`}
-            className="flex-shrink-0 flex flex-col items-center px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer"
+            className="flex-shrink-0 flex flex-col items-center px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer hover:opacity-90"
             style={{
-              background: isSelected
-                ? 'linear-gradient(135deg, hsl(38 85% 55% / 0.25), hsl(32 70% 42% / 0.15))'
-                : 'hsl(24 14% 10%)',
-              border: `1px solid ${isSelected ? 'hsl(38 85% 55% / 0.5)' : 'hsl(30 15% 18%)'}`,
-              color: isSelected ? 'hsl(38 85% 65%)' : 'hsl(34 20% 55%)',
+              background: isSelected ? 'rgba(255,234,0,0.1)' : '#111',
+              border: `1px solid ${isSelected ? 'rgba(255,234,0,0.4)' : '#1e1e1e'}`,
+              color: isSelected ? '#FFEA00' : '#555',
             }}
           >
             <span
-              className="text-xs font-medium uppercase tracking-widest mb-1"
+              className="font-medium uppercase tracking-widest mb-1"
               style={{ fontSize: '9px', letterSpacing: '0.12em' }}
             >
               {dayName}
             </span>
             <span
-              className="text-xl font-serif font-bold leading-none"
-              style={{ color: isSelected ? 'hsl(38 85% 70%)' : 'hsl(38 60% 88%)' }}
+              className="text-xl font-bold leading-none"
+              style={{ color: isSelected ? '#FFEA00' : '#ccc' }}
             >
               {dayNum}
             </span>
             <span
-              className="text-xs mt-1 uppercase tracking-wider"
+              className="mt-1 uppercase tracking-wider"
               style={{ fontSize: '9px', letterSpacing: '0.08em' }}
             >
               {monthName}

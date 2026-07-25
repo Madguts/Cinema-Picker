@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&family=DM+Mono:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@300;400;500&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -75,58 +75,56 @@
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
-  /* Deep screening room black with warm undertone */
-  --background: 24 12% 7%;
-  --foreground: 38 60% 92%;
+  /* Pure black with Omniplex yellow */
+  --background: 0 0% 4%;
+  --foreground: 0 0% 95%;
 
-  --border: 30 15% 18%;
+  --border: 0 0% 12%;
 
-  /* Card: slightly lighter than background, warm dark */
-  --card: 24 14% 10%;
-  --card-foreground: 38 60% 92%;
-  --card-border: 30 15% 16%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 95%;
+  --card-border: 0 0% 11%;
 
-  --sidebar: 24 14% 9%;
-  --sidebar-foreground: 38 60% 92%;
-  --sidebar-border: 30 15% 16%;
-  --sidebar-primary: 38 85% 55%;
-  --sidebar-primary-foreground: 24 20% 8%;
-  --sidebar-accent: 24 16% 14%;
-  --sidebar-accent-foreground: 38 60% 88%;
-  --sidebar-ring: 38 85% 55%;
+  --sidebar: 0 0% 6%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 11%;
+  --sidebar-primary: 55 100% 50%;
+  --sidebar-primary-foreground: 0 0% 0%;
+  --sidebar-accent: 0 0% 11%;
+  --sidebar-accent-foreground: 0 0% 88%;
+  --sidebar-ring: 55 100% 50%;
 
-  --popover: 24 14% 11%;
-  --popover-foreground: 38 60% 92%;
-  --popover-border: 30 15% 20%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 95%;
+  --popover-border: 0 0% 14%;
 
-  /* Warm amber gold — the projector lamp */
-  --primary: 38 85% 55%;
-  --primary-foreground: 24 20% 8%;
+  /* Omniplex yellow #FFEA00 */
+  --primary: 55 100% 50%;
+  --primary-foreground: 0 0% 0%;
 
-  --secondary: 24 16% 14%;
-  --secondary-foreground: 38 50% 85%;
+  --secondary: 0 0% 11%;
+  --secondary-foreground: 0 0% 85%;
 
-  --muted: 24 12% 13%;
-  --muted-foreground: 34 20% 55%;
+  --muted: 0 0% 9%;
+  --muted-foreground: 0 0% 45%;
 
-  /* Deep amber accent — slightly different from primary */
-  --accent: 32 70% 42%;
-  --accent-foreground: 38 70% 92%;
+  --accent: 55 100% 50%;
+  --accent-foreground: 0 0% 0%;
 
   --destructive: 0 62% 50%;
-  --destructive-foreground: 38 60% 96%;
+  --destructive-foreground: 0 0% 96%;
 
-  --input: 30 18% 20%;
-  --ring: 38 85% 55%;
+  --input: 0 0% 14%;
+  --ring: 55 100% 50%;
 
-  --chart-1: 38 85% 55%;
-  --chart-2: 32 70% 42%;
-  --chart-3: 24 50% 35%;
-  --chart-4: 16 45% 28%;
-  --chart-5: 200 40% 35%;
+  --chart-1: 55 100% 50%;
+  --chart-2: 45 90% 45%;
+  --chart-3: 30 60% 40%;
+  --chart-4: 200 40% 40%;
+  --chart-5: 270 40% 45%;
 
-  --app-font-sans: 'DM Sans', sans-serif;
-  --app-font-serif: 'Playfair Display', Georgia, serif;
+  --app-font-sans: 'Inter', sans-serif;
+  --app-font-serif: 'Inter', sans-serif;
   --app-font-mono: 'DM Mono', monospace;
   --radius: 0.375rem;
 
@@ -166,49 +164,49 @@
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
-  --background: 24 12% 7%;
-  --foreground: 38 60% 92%;
-  --border: 30 15% 18%;
-  --card: 24 14% 10%;
-  --card-foreground: 38 60% 92%;
-  --card-border: 30 15% 16%;
-  --sidebar: 24 14% 9%;
-  --sidebar-foreground: 38 60% 92%;
-  --sidebar-border: 30 15% 16%;
-  --sidebar-primary: 38 85% 55%;
-  --sidebar-primary-foreground: 24 20% 8%;
-  --sidebar-accent: 24 16% 14%;
-  --sidebar-accent-foreground: 38 60% 88%;
-  --sidebar-ring: 38 85% 55%;
-  --popover: 24 14% 11%;
-  --popover-foreground: 38 60% 92%;
-  --popover-border: 30 15% 20%;
-  --primary: 38 85% 55%;
-  --primary-foreground: 24 20% 8%;
-  --secondary: 24 16% 14%;
-  --secondary-foreground: 38 50% 85%;
-  --muted: 24 12% 13%;
-  --muted-foreground: 34 20% 55%;
-  --accent: 32 70% 42%;
-  --accent-foreground: 38 70% 92%;
+  --background: 0 0% 4%;
+  --foreground: 0 0% 95%;
+  --border: 0 0% 12%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 95%;
+  --card-border: 0 0% 11%;
+  --sidebar: 0 0% 6%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 11%;
+  --sidebar-primary: 55 100% 50%;
+  --sidebar-primary-foreground: 0 0% 0%;
+  --sidebar-accent: 0 0% 11%;
+  --sidebar-accent-foreground: 0 0% 88%;
+  --sidebar-ring: 55 100% 50%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 95%;
+  --popover-border: 0 0% 14%;
+  --primary: 55 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 11%;
+  --secondary-foreground: 0 0% 85%;
+  --muted: 0 0% 9%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 55 100% 50%;
+  --accent-foreground: 0 0% 0%;
   --destructive: 0 62% 50%;
-  --destructive-foreground: 38 60% 96%;
-  --input: 30 18% 20%;
-  --ring: 38 85% 55%;
-  --chart-1: 38 85% 55%;
-  --chart-2: 32 70% 42%;
-  --chart-3: 24 50% 35%;
-  --chart-4: 16 45% 28%;
-  --chart-5: 200 40% 35%;
+  --destructive-foreground: 0 0% 96%;
+  --input: 0 0% 14%;
+  --ring: 55 100% 50%;
+  --chart-1: 55 100% 50%;
+  --chart-2: 45 90% 45%;
+  --chart-3: 30 60% 40%;
+  --chart-4: 200 40% 40%;
+  --chart-5: 270 40% 45%;
 
-  --shadow-2xs: 0px 2px 0px 0px hsl(24 12% 4% / 0.6);
-  --shadow-xs: 0px 2px 4px 0px hsl(24 12% 4% / 0.5);
-  --shadow-sm: 0px 2px 4px 0px hsl(24 12% 4% / 0.4), 0px 1px 2px -1px hsl(24 12% 4% / 0.4);
-  --shadow: 0px 4px 8px 0px hsl(24 12% 4% / 0.5), 0px 2px 4px -1px hsl(24 12% 4% / 0.4);
-  --shadow-md: 0px 8px 16px 0px hsl(24 12% 4% / 0.5), 0px 4px 6px -1px hsl(24 12% 4% / 0.4);
-  --shadow-lg: 0px 16px 32px 0px hsl(24 12% 4% / 0.6), 0px 8px 10px -1px hsl(24 12% 4% / 0.4);
-  --shadow-xl: 0px 24px 48px 0px hsl(24 12% 4% / 0.7), 0px 12px 16px -1px hsl(24 12% 4% / 0.5);
-  --shadow-2xl: 0px 40px 80px 0px hsl(24 12% 4% / 0.8);
+  --shadow-2xs: 0px 2px 0px 0px rgba(0,0,0,0.6);
+  --shadow-xs: 0px 2px 4px 0px rgba(0,0,0,0.5);
+  --shadow-sm: 0px 2px 4px 0px rgba(0,0,0,0.4), 0px 1px 2px -1px rgba(0,0,0,0.4);
+  --shadow: 0px 4px 8px 0px rgba(0,0,0,0.5), 0px 2px 4px -1px rgba(0,0,0,0.4);
+  --shadow-md: 0px 8px 16px 0px rgba(0,0,0,0.5), 0px 4px 6px -1px rgba(0,0,0,0.4);
+  --shadow-lg: 0px 16px 32px 0px rgba(0,0,0,0.6), 0px 8px 10px -1px rgba(0,0,0,0.4);
+  --shadow-xl: 0px 24px 48px 0px rgba(0,0,0,0.7), 0px 12px 16px -1px rgba(0,0,0,0.5);
+  --shadow-2xl: 0px 40px 80px 0px rgba(0,0,0,0.8);
 }
 
 @layer base {

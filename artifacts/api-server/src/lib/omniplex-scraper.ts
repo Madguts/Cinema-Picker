@@ -3,6 +3,7 @@ import { logger } from "./logger";
 
 const BASE_URL = "https://www.omniplexcinemas.co.uk";
 const CINEMA_SLUG = "lisburn";
+const SHOWTIMES_URL = `${BASE_URL}/cinema/showtimes/${CINEMA_SLUG}`;
 
 export interface ScrapedShowtime {
   time: string;
@@ -17,15 +18,14 @@ export interface ScrapedMovie {
   detailUrl: string;
   durationMinutes: number | null;
   certificate: string | null;
+  genres: string[];
+  synopsis: string | null;
+  trailerUrl: string | null;
   showtimes: ScrapedShowtime[];
 }
 
 export interface ScrapedMovieDetails {
-  trailerUrl: string | null;
   posterUrl: string | null;
-  synopsis: string | null;
-  certificate: string | null;
-  durationMinutes: number | null;
 }
 
 function slugify(title: string): string {
@@ -35,214 +35,221 @@ function slugify(title: string): string {
     .replace(/^-|-$/g, "");
 }
 
-function parseTimeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function addMinutesToTime(time: string, minutes: number): string {
-  const base = parseTimeToMinutes(time);
-  const total = base + minutes;
-  const h = Math.floor(total / 60) % 24;
-  const m = total % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-function extractYouTubeUrl(html: string): string | null {
-  // Look for YouTube iframe embeds
-  const iframeMatch = html.match(
-    /(?:youtube\.com\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-  );
-  if (iframeMatch) {
-    return `https://www.youtube.com/watch?v=${iframeMatch[1]}`;
+function parseDuration(text: string): number | null {
+  // Handle "2hrs 52min", "1hr 30min", "52min", "2h 52m", etc.
+  const hrsMin = text.match(/(\d+)\s*h(?:r|rs)?\s*(\d+)\s*min/i);
+  if (hrsMin) {
+    return parseInt(hrsMin[1], 10) * 60 + parseInt(hrsMin[2], 10);
   }
-  // Look for data attributes
-  const dataMatch = html.match(/data-(?:trailer|video)[^"]*"([^"]*youtube[^"]*)/);
-  if (dataMatch) {
-    return dataMatch[1];
+  const minsOnly = text.match(/(\d+)\s*min/i);
+  if (minsOnly) {
+    return parseInt(minsOnly[1], 10);
+  }
+  const hrsOnly = text.match(/(\d+)\s*h(?:r|rs)?/i);
+  if (hrsOnly) {
+    return parseInt(hrsOnly[1], 10) * 60;
   }
   return null;
 }
 
-async function fetchWithHeaders(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      Accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Accept-Language": "en-GB,en;q=0.9",
-    },
-  });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} fetching ${url}`);
+function parseCertificateFromSrc(src: string): string | null {
+  // e.g. /images/ratings/UK_15.png → 15
+  const match = src.match(/UK_([^.]+)\.png/i);
+  if (!match) return null;
+  const raw = match[1].replace(/_/g, "");
+  return raw.toUpperCase();
+}
+
+async function fetchOmniplexPage(date?: string): Promise<string> {
+  if (date) {
+    // Omniplex uses a POST form to change the date
+    const body = new URLSearchParams({
+      action: "processFilters",
+      filterDate: date,
+    });
+    const response = await fetch(SHOWTIMES_URL, {
+      method: "POST",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-GB,en;q=0.9",
+      },
+      body: body.toString(),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} fetching Omniplex for date ${date}`);
+    }
+    return response.text();
+  } else {
+    const response = await fetch(SHOWTIMES_URL, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-GB,en;q=0.9",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} fetching Omniplex showtimes`);
+    }
+    return response.text();
   }
-  return response.text();
 }
 
 export async function scrapeShowtimes(date?: string): Promise<ScrapedMovie[]> {
-  const url = date
-    ? `${BASE_URL}/cinema/showtimes/${CINEMA_SLUG}?date=${date}`
-    : `${BASE_URL}/cinema/showtimes/${CINEMA_SLUG}`;
+  logger.info({ date, url: SHOWTIMES_URL }, "Fetching Omniplex showtimes");
 
-  logger.info({ url }, "Fetching Omniplex showtimes");
-  const html = await fetchWithHeaders(url);
+  const html = await fetchOmniplexPage(date);
   const $ = cheerio.load(html);
 
   const movies: ScrapedMovie[] = [];
   const seenIds = new Set<string>();
 
-  // Try multiple selectors for different page layouts
-  // Omniplex typically wraps each film in a card/article element
-  const filmSelectors = [
-    ".film-card",
-    ".movie-card",
-    ".film-listing",
-    ".film",
-    "[data-film]",
-    ".schedule-item",
-    ".listing-item",
-    "article",
-  ];
+  // Find all movie title links — these are unique per movie card
+  // Structure: <a href="/cinema/movie/lisburn/slug">Title</a>
+  const titleLinks = $('a[href*="/cinema/movie/"]').filter((_i, el) => {
+    const href = $(el).attr("href") || "";
+    return href.includes(`/${CINEMA_SLUG}/`) || href.includes("/movie/");
+  });
 
-  let filmElements = $();
-  for (const sel of filmSelectors) {
-    const found = $(sel);
-    if (found.length > 0) {
-      filmElements = found;
-      logger.info({ selector: sel, count: found.length }, "Found film elements");
-      break;
-    }
-  }
+  titleLinks.each((_i, linkEl) => {
+    const $link = $(linkEl);
+    const href = $link.attr("href") || "";
+    const title = $link.text().trim();
 
-  // If no specific selectors work, try to find elements by structure
-  if (filmElements.length === 0) {
-    // Look for elements that contain both an img and multiple time-like links
-    $("section, div").each((_i, el) => {
-      const $el = $(el);
-      const hasTitle =
-        $el.find("h2, h3, h4").length > 0 ||
-        $el.find(".title, .film-title, .movie-title").length > 0;
-      const hasShowtimes =
-        $el.find('a[href*="booking"], a[href*="book"]').length > 0 ||
-        $el.find(".showtime, .session, .time").length > 0;
-      if (hasTitle && hasShowtimes) {
-        filmElements = filmElements.add(el);
+    if (!title || !href) return;
+
+    // Deduplicate by title slug
+    const id = slugify(title);
+    if (seenIds.has(id)) return;
+
+    // Build detail URL
+    const detailUrl = href.startsWith("http") ? href : BASE_URL + href;
+
+    // Traverse up to find the info column (col-span-2 md:col-span-5)
+    // Structure: a → p.font-medium → div.flex → div.w-full → div.col-span-2 → [outer grid]
+    const infoCol = $link.closest('[class*="col-span-2"]');
+    if (!infoCol.length) return;
+
+    // The outer movie card grid is infoCol's parent
+    const outerGrid = infoCol.parent();
+
+    // ---- Certificate ----
+    let certificate: string | null = null;
+    outerGrid.find('img[src*="/images/ratings/"]').each((_j, imgEl): false | void => {
+      const src = $(imgEl).attr("src") || "";
+      const cert = parseCertificateFromSrc(src);
+      if (cert) {
+        certificate = cert;
+        return false;
       }
     });
-  }
 
-  filmElements.each((_i, el) => {
-    const $el = $(el);
+    // ---- Genres ----
+    let genres: string[] = [];
+    // The genres text is next to the rating image, in a <p> sibling
+    outerGrid.find('img[src*="/images/ratings/"]').each((_j, imgEl) => {
+      const $parent = $(imgEl).parent();
+      const genreText = $parent.find("p").text().trim();
+      if (genreText) {
+        genres = genreText.split(",").map((g) => g.trim()).filter(Boolean);
+        return false;
+      }
+    });
 
-    // Extract title
-    const titleEl = $el
-      .find("h2, h3, h4, .film-title, .movie-title, .title")
-      .first();
-    const title = titleEl.text().trim() || $el.find("[itemprop='name']").text().trim();
-    if (!title) return;
-
-    // Extract poster
-    const imgEl = $el.find("img").first();
-    let posterUrl: string | null =
-      imgEl.attr("src") ||
-      imgEl.attr("data-src") ||
-      imgEl.attr("data-lazy-src") ||
-      null;
-    if (posterUrl && !posterUrl.startsWith("http")) {
-      posterUrl = BASE_URL + posterUrl;
-    }
-
-    // Extract detail URL
-    const linkEl = $el.find('a[href*="/film/"], a[href*="/movie/"], a.film-link, a.movie-link').first();
-    let detailUrl =
-      linkEl.attr("href") ||
-      $el.find("a").first().attr("href") ||
-      "";
-    if (detailUrl && !detailUrl.startsWith("http")) {
-      detailUrl = BASE_URL + detailUrl;
-    }
-
-    // Extract certificate
-    const certEl = $el.find(".certificate, .rating, .cert, [class*='cert'], [class*='rating']").first();
-    const certificate = certEl.text().trim() || null;
-
-    // Extract duration
+    // ---- Duration ----
     let durationMinutes: number | null = null;
-    const durationText =
-      $el.find(".duration, .runtime, [class*='duration'], [class*='runtime']").first().text() ||
-      $el.text();
-    const durationMatch = durationText.match(/(\d+)\s*(?:min|mins|minutes)/i);
-    if (durationMatch) {
-      durationMinutes = parseInt(durationMatch[1], 10);
+    // Duration text looks like "2hrs 52min" and is near the genres
+    outerGrid.find("p").each((_j, pEl) => {
+      const text = $(pEl).text().trim();
+      const dur = parseDuration(text);
+      if (dur && dur > 30) {
+        durationMinutes = dur;
+        return false;
+      }
+    });
+
+    // ---- Synopsis ----
+    const synopsisEl = outerGrid.find(".synopsis-short, span.synopsis-short");
+    const synopsis = synopsisEl.text().trim() || null;
+
+    // ---- Trailer YouTube ID ----
+    let trailerUrl: string | null = null;
+    outerGrid.find("[onclick]").each((_j, el): false | void => {
+      const onclick = $(el).attr("onclick") || "";
+      const match = onclick.match(/playYoutubeVideo\(['"]([a-zA-Z0-9_-]{11})['"]\)/);
+      if (match) {
+        trailerUrl = `https://www.youtube.com/watch?v=${match[1]}`;
+        return false;
+      }
+    });
+    // Also check img tags' onclick
+    if (!trailerUrl) {
+      outerGrid.find("img[onclick]").each((_j, el): false | void => {
+        const onclick = $(el).attr("onclick") || "";
+        const match = onclick.match(/playYoutubeVideo\(['"]([a-zA-Z0-9_-]{11})['"]\)/);
+        if (match) {
+          trailerUrl = `https://www.youtube.com/watch?v=${match[1]}`;
+          return false;
+        }
+      });
     }
 
-    // Extract showtimes
+    // ---- Poster ----
+    // The poster image is in the first column (A), look for img not SVG
+    let posterUrl: string | null = null;
+    outerGrid.find("img").each((_j, imgEl): false | void => {
+      const src = $(imgEl).attr("src") || $(imgEl).attr("data-src") || "";
+      // Skip SVG icons, rating images, and favicon-like images
+      if (
+        src.includes("/svgs/") ||
+        src.includes("/images/ratings/") ||
+        src.includes("/images/icons/") ||
+        !src ||
+        src.endsWith(".svg")
+      ) {
+        return;
+      }
+      posterUrl = src.startsWith("http") ? src : BASE_URL + src;
+      return false;
+    });
+
+    // ---- Showtimes ----
     const showtimes: ScrapedShowtime[] = [];
-    
-    // Look for time buttons/links
-    const timeSelectors = [
-      ".showtime",
-      ".session",
-      ".time-btn",
-      ".time-button",
-      'a[href*="booking"]',
-      'a[href*="book"]',
-      'a[href*="ticket"]',
-      ".screening-time",
-      "button.time",
-    ];
 
-    for (const sel of timeSelectors) {
-      $el.find(sel).each((_j, timeEl) => {
-        const $time = $(timeEl);
-        const timeText = $time.text().trim();
-        const timeMatch = timeText.match(/\b(\d{1,2}:\d{2})\b/);
-        if (timeMatch) {
-          let bookingUrl =
-            $time.attr("href") ||
-            $time.closest("a").attr("href") ||
-            "";
-          if (bookingUrl && !bookingUrl.startsWith("http")) {
-            bookingUrl = BASE_URL + bookingUrl;
-          }
-          if (!bookingUrl) {
-            bookingUrl = detailUrl;
-          }
-          const time = timeMatch[1];
-          const endTime = durationMinutes
-            ? addMinutesToTime(time, durationMinutes + 20)
-            : undefined; // +20 for adverts
-          showtimes.push({ time, endTime, bookingUrl });
-        }
-      });
-      if (showtimes.length > 0) break;
-    }
+    outerGrid.find(".showTimeBox").each((_j, boxEl) => {
+      const $box = $(boxEl);
 
-    // If no showtimes found via specific selectors, scan all links for times
-    if (showtimes.length === 0) {
-      $el.find("a").each((_j, linkEl) => {
-        const $link = $(linkEl);
-        const text = $link.text().trim();
-        const timeMatch = text.match(/^(\d{1,2}:\d{2})$/);
-        if (timeMatch) {
-          let bookingUrl = $link.attr("href") || "";
-          if (bookingUrl && !bookingUrl.startsWith("http")) {
-            bookingUrl = BASE_URL + bookingUrl;
-          }
-          const time = timeMatch[1];
-          const endTime = durationMinutes
-            ? addMinutesToTime(time, durationMinutes + 20)
-            : undefined;
-          showtimes.push({ time, endTime, bookingUrl });
-        }
-      });
-    }
+      // Time: <h4 class="bigText">20:30</h4>
+      const startText = $box.find("h4.bigText, h4[class*='bigText']").first().text().trim();
+      const startMatch = startText.match(/(\d{1,2}:\d{2})/);
+      if (!startMatch) return;
+      const time = startMatch[1];
+
+      // End time: <p class="smallText">- 23:22</p>
+      const endText = $box.find("p.smallText, p[class*='smallText']").first().text().trim();
+      const endMatch = endText.match(/(\d{1,2}:\d{2})/);
+      const endTime = endMatch ? endMatch[1] : undefined;
+
+      // Booking URL: the <a> wrapping this showTimeBox
+      const $parentLink = $box.parent("a");
+      let bookingUrl = $parentLink.attr("href") || "";
+      if (bookingUrl && !bookingUrl.startsWith("http")) {
+        bookingUrl = BASE_URL + bookingUrl;
+      }
+      if (!bookingUrl) {
+        bookingUrl = detailUrl;
+      }
+
+      showtimes.push({ time, endTime, bookingUrl });
+    });
 
     if (showtimes.length === 0) return; // Skip movies with no showtimes
 
-    const id = slugify(title);
-    if (seenIds.has(id)) return;
     seenIds.add(id);
 
     movies.push({
@@ -252,126 +259,73 @@ export async function scrapeShowtimes(date?: string): Promise<ScrapedMovie[]> {
       detailUrl,
       durationMinutes,
       certificate,
+      genres,
+      synopsis,
+      trailerUrl,
       showtimes,
     });
   });
 
-  // Fallback: try JSON-LD structured data
-  if (movies.length === 0) {
-    $('script[type="application/ld+json"]').each((_i, el) => {
-      try {
-        const data = JSON.parse($(el).html() || "{}");
-        const events = Array.isArray(data) ? data : [data];
-        for (const event of events) {
-          if (event["@type"] === "Movie" || event["@type"] === "ScreeningEvent") {
-            // Parse structured data if available
-            logger.debug({ event }, "Found JSON-LD movie data");
-          }
-        }
-      } catch {
-        // ignore parse errors
-      }
-    });
-  }
-
-  logger.info({ count: movies.length }, "Scraped movies");
+  logger.info({ count: movies.length, date }, "Scraped movies");
   return movies;
 }
 
 export async function scrapeMovieDetails(
   detailUrl: string
 ): Promise<ScrapedMovieDetails> {
-  logger.info({ detailUrl }, "Fetching movie details");
-  const html = await fetchWithHeaders(detailUrl);
+  logger.info({ detailUrl }, "Fetching movie detail page for poster");
+
+  const response = await fetch(detailUrl, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} fetching movie detail`);
+  }
+  const html = await response.text();
   const $ = cheerio.load(html);
 
-  // Extract trailer URL from YouTube iframes
-  let trailerUrl: string | null = null;
-
-  $("iframe").each((_i, el) => {
-    const src = $(el).attr("src") || $(el).attr("data-src") || "";
-    if (src.includes("youtube") || src.includes("youtu.be")) {
-      const match = src.match(/embed\/([a-zA-Z0-9_-]{11})/);
-      if (match) {
-        trailerUrl = `https://www.youtube.com/watch?v=${match[1]}`;
-      }
-    }
-  });
-
-  // Try extracting from inline scripts / data attributes
-  if (!trailerUrl) {
-    trailerUrl = extractYouTubeUrl(html);
-  }
-
-  // Also check for trailer links
-  if (!trailerUrl) {
-    $('a[href*="youtube"], a[href*="youtu.be"]').each((_i, el): false | void => {
-      const href = $(el).attr("href") || "";
-      if (href.includes("youtube") || href.includes("youtu.be")) {
-        trailerUrl = href;
-        return false; // break
-      }
-    });
-  }
-
-  // Extract poster (larger image than on listing page)
   let posterUrl: string | null = null;
+
+  // Look for the main movie poster image
   const posterSelectors = [
     ".film-poster img",
     ".movie-poster img",
     ".poster img",
-    ".hero-image img",
-    "[class*='poster'] img",
-    "[class*='hero'] img",
+    '[class*="poster"] img',
+    'img[alt*="poster" i]',
+    'img[alt*="movie" i]',
   ];
   for (const sel of posterSelectors) {
     const img = $(sel).first();
     if (img.length) {
-      posterUrl =
-        img.attr("src") || img.attr("data-src") || img.attr("data-lazy-src") || null;
-      if (posterUrl && !posterUrl.startsWith("http")) {
-        posterUrl = BASE_URL + posterUrl;
+      const src = img.attr("src") || img.attr("data-src") || "";
+      if (src && !src.includes("/svgs/") && !src.includes("/images/icons/")) {
+        posterUrl = src.startsWith("http") ? src : BASE_URL + src;
+        break;
       }
-      break;
     }
   }
 
-  // Extract synopsis
-  const synopsisSelectors = [
-    ".synopsis",
-    ".description",
-    ".film-description",
-    ".movie-description",
-    "[class*='synopsis']",
-    "[class*='description']",
-    "p.lead",
-  ];
-  let synopsis: string | null = null;
-  for (const sel of synopsisSelectors) {
-    const text = $(sel).first().text().trim();
-    if (text.length > 50) {
-      synopsis = text;
-      break;
-    }
+  // Fallback: first meaningful img on the page
+  if (!posterUrl) {
+    $("img").each((_i, el): false | void => {
+      const src = $(el).attr("src") || "";
+      if (
+        src &&
+        !src.includes("/svgs/") &&
+        !src.includes("/images/icons/") &&
+        !src.includes("/images/ratings/") &&
+        !src.endsWith(".svg")
+      ) {
+        posterUrl = src.startsWith("http") ? src : BASE_URL + src;
+        return false;
+      }
+    });
   }
 
-  // Extract certificate & duration
-  let certificate: string | null = null;
-  let durationMinutes: number | null = null;
-
-  $(".certificate, .rating, .cert, [class*='cert']").each((_i, el): false | void => {
-    const text = $(el).text().trim();
-    if (/^(U|PG|12A?|15|18|TBC)$/i.test(text)) {
-      certificate = text.toUpperCase();
-      return false;
-    }
-  });
-
-  const bodyText = $("body").text();
-  const durationMatch = bodyText.match(/(\d+)\s*(?:min|mins|minutes)/i);
-  if (durationMatch) {
-    durationMinutes = parseInt(durationMatch[1], 10);
-  }
-
-  return { trailerUrl, posterUrl, synopsis, certificate, durationMinutes };
+  return { posterUrl };
 }

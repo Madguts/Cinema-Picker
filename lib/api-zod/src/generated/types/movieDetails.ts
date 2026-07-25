@@ -8,28 +8,8 @@
 
 export interface MovieDetails {
   /**
-     * YouTube or other trailer URL
-     * @nullable
-     */
-  trailerUrl?: string | null;
-  /**
-     * High-res poster image URL
+     * High-res poster image URL from the movie detail page
      * @nullable
      */
   posterUrl?: string | null;
-  /**
-     * Movie synopsis/description
-     * @nullable
-     */
-  synopsis?: string | null;
-  /**
-     * Age rating
-     * @nullable
-     */
-  certificate?: string | null;
-  /**
-     * Runtime in minutes
-     * @nullable
-     */
-  durationMinutes?: number | null;
 }

@@ -12,14 +12,14 @@ export interface CinemaMovie {
   id: string;
   title: string;
   /**
-     * Poster image URL from Omniplex
+     * Poster image URL
      * @nullable
      */
   posterUrl?: string | null;
   /** URL of the movie detail page on omniplexcinemas.co.uk */
   detailUrl: string;
   /**
-     * Runtime in minutes if available
+     * Runtime in minutes
      * @nullable
      */
   durationMinutes?: number | null;
@@ -28,5 +28,17 @@ export interface CinemaMovie {
      * @nullable
      */
   certificate?: string | null;
+  /** List of genres e.g. ['Action', 'Adventure'] */
+  genres: string[];
+  /**
+     * Short synopsis from the listings page
+     * @nullable
+     */
+  synopsis?: string | null;
+  /**
+     * YouTube trailer URL extracted from the listings page
+     * @nullable
+     */
+  trailerUrl?: string | null;
   showtimes: Showtime[];
 }

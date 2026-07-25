@@ -230,8 +230,8 @@ export const getGetMovieDetailsUrl = (params: GetMovieDetailsParams,) => {
 }
 
 /**
- * Fetches the Omniplex movie page and extracts trailer URL and poster
- * @summary Get detailed info for a movie (trailer, poster)
+ * Fetches the Omniplex movie page and extracts poster URL
+ * @summary Get detailed info for a movie (poster from detail page)
  */
 export const getMovieDetails = async (params: GetMovieDetailsParams, options?: RequestInit): Promise<MovieDetails> => {
 
@@ -278,7 +278,7 @@ export type GetMovieDetailsQueryError = ErrorType<ErrorResponse>
 
 
 /**
- * @summary Get detailed info for a movie (trailer, poster)
+ * @summary Get detailed info for a movie (poster from detail page)
  */
 
 export function useGetMovieDetails<TData = Awaited<ReturnType<typeof getMovieDetails>>, TError = ErrorType<ErrorResponse>>(
