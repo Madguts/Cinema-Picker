@@ -1,12 +1,15 @@
 import { useMemo } from 'react';
 import { Ban, Check, X, Film } from 'lucide-react';
 import type { CinemaMovie } from '@workspace/api-client-react';
+import { useTimeFilter } from '@/hooks/use-time-filter';
 
 interface VetoModalProps {
   isOpen: boolean;
   onClose: () => void;
   movies: CinemaMovie[];
   isLoading: boolean;
+  startTime: string;
+  endTime: string;
   isVetoed: (id: string) => boolean;
   onToggleVeto: (id: string) => void;
   onClearVetoes: (ids: string[]) => void;
@@ -21,6 +24,8 @@ export function VetoModal({
   onClose,
   movies,
   isLoading,
+  startTime,
+  endTime,
   isVetoed,
   onToggleVeto,
   onClearVetoes,
@@ -28,6 +33,24 @@ export function VetoModal({
   const sortedMovies = useMemo(
     () => [...movies].sort((a, b) => sortTitle(a.title).localeCompare(sortTitle(b.title))),
     [movies]
+  );
+  const { isShowtimeInWindow } = useTimeFilter();
+
+  const availableMovies = useMemo(
+    () =>
+      sortedMovies.filter((movie) =>
+        movie.showtimes.some(
+          (showtime) =>
+            Boolean(showtime?.time) &&
+            isShowtimeInWindow(showtime, startTime, endTime)
+        )
+      ),
+    [sortedMovies, isShowtimeInWindow, startTime, endTime]
+  );
+
+  const unavailableMovies = useMemo(
+    () => sortedMovies.filter((movie) => !availableMovies.includes(movie)),
+    [sortedMovies, availableMovies]
   );
 
   const vetoedIds = useMemo(
@@ -120,7 +143,12 @@ export function VetoModal({
             </div>
           ) : (
             <div className="py-2">
-              {sortedMovies.map((movie) => {
+              {availableMovies.length > 0 && (
+                <div className="px-5 pt-2 pb-1 text-xs uppercase tracking-widest font-medium" style={{ color: '#777' }}>
+                  Showing in this window
+                </div>
+              )}
+              {availableMovies.map((movie) => {
                 const vetoed = isVetoed(movie.id);
                 return (
                   <button
@@ -197,6 +225,89 @@ export function VetoModal({
                   </button>
                 );
               })}
+              {unavailableMovies.length > 0 && (
+                <>
+                  <div
+                    className="px-5 pt-5 pb-1 text-xs uppercase tracking-widest font-medium"
+                    style={{ color: '#555', borderTop: availableMovies.length > 0 ? '1px solid #222' : undefined }}
+                  >
+                    Outside this window
+                  </div>
+                  {unavailableMovies.map((movie) => {
+                    const vetoed = isVetoed(movie.id);
+                    return (
+                      <button
+                        key={movie.id}
+                        onClick={() => onToggleVeto(movie.id)}
+                        className="w-full flex items-center gap-4 px-5 py-3 text-left transition-all"
+                        style={{
+                          background: vetoed ? 'rgba(255,234,0,0.02)' : 'transparent',
+                          borderBottom: '1px solid #171717',
+                          opacity: 0.58,
+                        }}
+                        onMouseEnter={e => {
+                          (e.currentTarget as HTMLElement).style.background = vetoed
+                            ? 'rgba(255,234,0,0.05)'
+                            : '#141414';
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLElement).style.background = vetoed
+                            ? 'rgba(255,234,0,0.02)'
+                            : 'transparent';
+                        }}
+                      >
+                        <div
+                          className="w-10 h-14 rounded flex-shrink-0 overflow-hidden"
+                          style={{ background: '#1a1a1a' }}
+                        >
+                          {movie.posterUrl ? (
+                            <img
+                              src={movie.posterUrl}
+                              alt={movie.title}
+                              className="w-full h-full object-cover"
+                              style={{ opacity: vetoed ? 0.22 : 0.45, filter: 'grayscale(1)' }}
+                              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Film size={14} style={{ color: '#333' }} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className="font-medium text-sm leading-snug truncate"
+                            style={{ color: vetoed ? '#555' : '#888' }}
+                          >
+                            {movie.title}
+                          </div>
+                          {(movie.certificate || movie.durationMinutes) && (
+                            <div className="text-xs mt-0.5" style={{ color: '#555' }}>
+                              {movie.certificate && <span>{movie.certificate}</span>}
+                              {movie.certificate && movie.durationMinutes && <span> · </span>}
+                              {movie.durationMinutes && (
+                                <span>
+                                  {Math.floor(movie.durationMinutes / 60)}h {movie.durationMinutes % 60}m
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                          style={{
+                            background: vetoed ? 'rgba(255,234,0,0.07)' : '#181818',
+                            border: `1px solid ${vetoed ? 'rgba(255,234,0,0.22)' : '#2a2a2a'}`,
+                            color: vetoed ? '#FFEA00' : '#666',
+                          }}
+                        >
+                          <Ban size={14} style={{ opacity: vetoed ? 1 : 0.65 }} />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </>
+              )}
             </div>
           )}
         </div>

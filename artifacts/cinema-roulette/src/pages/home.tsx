@@ -277,6 +277,8 @@ export default function HomePage() {
         onClose={() => setVetoModalOpen(false)}
         movies={data?.movies ?? []}
         isLoading={isLoading}
+        startTime={startTime}
+        endTime={endTime}
         isVetoed={isVetoed}
         onToggleVeto={toggleVeto}
         onClearVetoes={(ids) => clearVetoes(ids)}
