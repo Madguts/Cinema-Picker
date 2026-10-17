@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Ban, ExternalLink, Clock, Film, Play, Tag } from 'lucide-react';
 import type { CinemaMovie } from '@workspace/api-client-react';
 import { useGetMovieDetails, getGetMovieDetailsQueryKey } from '@workspace/api-client-react';
@@ -60,6 +60,10 @@ interface MovieResultProps {
 export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: MovieResultProps) {
   const [imageError, setImageError] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [synopsisExpanded, setSynopsisExpanded] = useState(false);
+  const [synopsisCanExpand, setSynopsisCanExpand] = useState(false);
+  const synopsisRef = useRef<HTMLParagraphElement>(null);
+  const { certificate, durationMinutes, synopsis, trailerUrl, genres } = movie;
 
   // Only fetch movie-details for the poster; everything else comes from the listing
   const { data: details, isLoading: detailsLoading } = useGetMovieDetails(
@@ -76,16 +80,33 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
   useEffect(() => {
     setVisible(false);
     setImageError(false);
+    setSynopsisExpanded(false);
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, [movie.id]);
 
+  useEffect(() => {
+    const element = synopsisRef.current;
+    if (!element) {
+      setSynopsisCanExpand(false);
+      return;
+    }
+
+    const measureOverflow = () => {
+      if (!synopsisExpanded) {
+        setSynopsisCanExpand(element.scrollHeight > element.clientHeight + 1);
+      }
+    };
+
+    measureOverflow();
+    const observer = new ResizeObserver(measureOverflow);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [synopsis, synopsisExpanded]);
+
   // Poster: listing-page poster is more reliable; only use detail-page result
   // if we genuinely have nothing from the listing scrape.
   const posterUrl = movie.posterUrl || details?.posterUrl;
-
-  // All other info comes directly from the listing scrape
-  const { certificate, durationMinutes, synopsis, trailerUrl, genres } = movie;
 
   function getYouTubeId(url: string | null | undefined): string | null {
     if (!url) return null;
@@ -214,13 +235,29 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
 
             {/* Synopsis */}
             {synopsis && (
-              <p
-                className="text-sm leading-relaxed line-clamp-4"
-                style={{ color: '#999' }}
-                data-testid="text-synopsis"
-              >
-                {synopsis}
-              </p>
+              <div>
+                <p
+                  ref={synopsisRef}
+                  id="movie-synopsis"
+                  className={`text-sm leading-relaxed ${synopsisExpanded ? '' : 'line-clamp-4'}`}
+                  style={{ color: '#999' }}
+                  data-testid="text-synopsis"
+                >
+                  {synopsis}
+                </p>
+                {synopsisCanExpand && (
+                  <button
+                    type="button"
+                    aria-expanded={synopsisExpanded}
+                    aria-controls="movie-synopsis"
+                    onClick={() => setSynopsisExpanded((expanded) => !expanded)}
+                    className="mt-2 text-sm font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                    style={{ color: '#FFEA00' }}
+                  >
+                    {synopsisExpanded ? 'Show less' : 'Read more'}
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Trailer */}
