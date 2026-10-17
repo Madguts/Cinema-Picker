@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Ban, Check, X, Film } from 'lucide-react';
+import { Ban, Check, X, Film, Clock } from 'lucide-react';
 import type { CinemaMovie } from '@workspace/api-client-react';
 import { useTimeFilter } from '@/hooks/use-time-filter';
+import { CertificateBadge } from './CertificateBadge';
 
 interface VetoModalProps {
   isOpen: boolean;
@@ -198,18 +199,19 @@ export function VetoModal({
                       >
                         {movie.title}
                       </div>
-                      {(movie.certificate || movie.durationMinutes) && (
-                        <div className="text-xs mt-0.5" style={{ color: '#555' }}>
-                          {movie.certificate && <span>{movie.certificate}</span>}
-                          {movie.certificate && movie.durationMinutes && <span> · </span>}
-                          {movie.durationMinutes && (
-                            <span>
-                              {Math.floor(movie.durationMinutes / 60)}h {movie.durationMinutes % 60}m
-                            </span>
-                          )}
+                      {movie.durationMinutes && (
+                        <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: '#888' }}>
+                          <Clock size={12} />
+                          <span>
+                            {Math.floor(movie.durationMinutes / 60)}h {movie.durationMinutes % 60}m
+                          </span>
                         </div>
                       )}
                     </div>
+
+                    {movie.certificate && (
+                      <CertificateBadge certificate={movie.certificate} size="lg" />
+                    )}
 
                     {/* Veto toggle indicator */}
                     <div
@@ -281,18 +283,18 @@ export function VetoModal({
                           >
                             {movie.title}
                           </div>
-                          {(movie.certificate || movie.durationMinutes) && (
-                            <div className="text-xs mt-0.5" style={{ color: '#555' }}>
-                              {movie.certificate && <span>{movie.certificate}</span>}
-                              {movie.certificate && movie.durationMinutes && <span> · </span>}
-                              {movie.durationMinutes && (
-                                <span>
-                                  {Math.floor(movie.durationMinutes / 60)}h {movie.durationMinutes % 60}m
-                                </span>
-                              )}
+                          {movie.durationMinutes && (
+                            <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: '#777' }}>
+                              <Clock size={12} />
+                              <span>
+                                {Math.floor(movie.durationMinutes / 60)}h {movie.durationMinutes % 60}m
+                              </span>
                             </div>
                           )}
                         </div>
+                        {movie.certificate && (
+                          <CertificateBadge certificate={movie.certificate} size="lg" />
+                        )}
                         <div
                           className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
                           style={{
