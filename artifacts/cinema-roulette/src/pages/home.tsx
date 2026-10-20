@@ -121,7 +121,7 @@ export default function HomePage() {
           Get a random movie
         </h1>
         <p className="text-sm max-w-sm mx-auto" style={{ color: '#555' }}>
-          Pick a time window. Get a random movie.
+          Pick a time window.
         </p>
       </div>
 
