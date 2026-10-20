@@ -152,7 +152,7 @@ export async function scrapeShowtimes(date?: string): Promise<ScrapedMovie[]> {
     // ---- Genres ----
     let genres: string[] = [];
     // The genres text is next to the rating image, in a <p> sibling
-    outerGrid.find('img[src*="/images/ratings/"]').each((_j, imgEl) => {
+    outerGrid.find('img[src*="/images/ratings/"]').each((_j, imgEl): false | void => {
       const $parent = $(imgEl).parent();
       const genreText = $parent.find("p").text().trim();
       if (genreText) {
@@ -164,7 +164,7 @@ export async function scrapeShowtimes(date?: string): Promise<ScrapedMovie[]> {
     // ---- Duration ----
     let durationMinutes: number | null = null;
     // Duration text looks like "2hrs 52min" and is near the genres
-    outerGrid.find("p").each((_j, pEl) => {
+    outerGrid.find("p").each((_j, pEl): false | void => {
       const text = $(pEl).text().trim();
       const dur = parseDuration(text);
       if (dur && dur > 30) {
