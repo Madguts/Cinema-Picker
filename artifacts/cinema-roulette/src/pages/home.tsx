@@ -113,18 +113,7 @@ export default function HomePage() {
       />
 
       {/* Hero */}
-      <div className="relative pt-24 pb-10 px-6 text-center">
-        <div
-          className="inline-block mb-3 uppercase tracking-widest text-xs px-3 py-1 rounded-full font-medium"
-          style={{
-            background: 'rgba(255,234,0,0.08)',
-            border: '1px solid rgba(255,234,0,0.15)',
-            color: 'rgba(255,234,0,0.7)',
-            fontSize: '10px',
-          }}
-        >
-          Your Personal Film Decider
-        </div>
+      <div className="relative pt-16 pb-10 px-6 text-center">
         <h1
           className="text-5xl md:text-6xl font-bold leading-tight mb-3 tracking-tight"
           style={{ color: '#fff' }}
@@ -132,7 +121,7 @@ export default function HomePage() {
           Get a random movie
         </h1>
         <p className="text-sm max-w-sm mx-auto" style={{ color: '#555' }}>
-          Pick a day and time window. Let chance decide the rest.
+          Pick a time window. Get a random movie.
         </p>
       </div>
 
