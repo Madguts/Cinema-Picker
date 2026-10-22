@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, startOfDay } from 'date-fns';
 import { AlertCircle, Film, Ban, Check } from 'lucide-react';
-import type { CinemaMovie } from '@workspace/api-client-react';
+import type { CinemaMovie } from '@/lib/types';
 import { useShowtimes } from '@/hooks/use-showtimes';
 import { useVetoes } from '@/hooks/use-vetoes';
 import { DayPicker } from '@/components/DayPicker';

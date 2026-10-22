@@ -25,7 +25,7 @@ every six hours. It can also be started manually from the Actions tab.
 Enable GitHub Pages for the repository with **GitHub Actions** as the build
 and deployment source.
 
-The workflow scrapes the next eleven calendar days for `Europe/London` and
-packages them as JSON files alongside the static frontend. GitHub Pages
-cannot run the Express API, so the browser reads these generated files
-instead. Live bookings still open directly on Omniplex.
+The workflow scrapes the next eleven calendar days for `Europe/London` with
+the generator in `scripts/` and packages the resulting JSON files alongside
+the static frontend. The browser reads these generated files directly. Live
+bookings still open directly on Omniplex.

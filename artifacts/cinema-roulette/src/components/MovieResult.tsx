@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Ban, ExternalLink, Clock, Film, Play, Tag } from 'lucide-react';
-import type { CinemaMovie } from '@workspace/api-client-react';
+import type { CinemaMovie } from '@/lib/types';
 import { CertificateBadge } from './CertificateBadge';
 import { timeToMinutes } from '@/hooks/use-time-filter';
 import {

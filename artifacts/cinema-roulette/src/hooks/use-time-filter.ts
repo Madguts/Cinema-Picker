@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { Showtime } from '@workspace/api-client-react';
+import type { Showtime } from '@/lib/types';
 
 // Convert "HH:MM" to minutes since midnight
 export function timeToMinutes(time: string): number {

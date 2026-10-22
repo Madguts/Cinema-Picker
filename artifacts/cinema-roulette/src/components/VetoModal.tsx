@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Ban, Check, X, Film, Clock } from 'lucide-react';
-import type { CinemaMovie } from '@workspace/api-client-react';
+import type { CinemaMovie } from '@/lib/types';
 import { useTimeFilter } from '@/hooks/use-time-filter';
 import { CertificateBadge } from './CertificateBadge';
 
