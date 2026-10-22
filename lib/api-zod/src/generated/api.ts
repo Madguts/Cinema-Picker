@@ -35,7 +35,13 @@ export const GetShowtimesResponse = zod.object({
   "durationMinutes": zod.number().nullish().describe('Runtime in minutes'),
   "certificate": zod.string().nullish().describe('Age rating e.g. \'PG\', \'12A\', \'15\', \'18\''),
   "genres": zod.array(zod.string()).describe('List of genres e.g. [\'Action\', \'Adventure\']'),
-  "synopsis": zod.string().nullish().describe('Short synopsis from the listings page'),
+  "synopsis": zod.string().nullish().describe('Full movie synopsis when available, otherwise the listings synopsis'),
+  "director": zod.string().nullish().describe('Movie director when available'),
+  "starring": zod.string().nullish().describe('Starring cast when available'),
+  "additionalInfo": zod.array(zod.object({
+  "label": zod.string(),
+  "value": zod.string()
+})).optional().describe('Other available movie metadata from the movie detail page'),
   "trailerUrl": zod.string().nullish().describe('YouTube trailer URL extracted from the listings page'),
   "showtimes": zod.array(zod.object({
   "time": zod.string().describe('Show start time e.g. \'14:30\''),
@@ -47,15 +53,20 @@ export const GetShowtimesResponse = zod.object({
 
 
 /**
- * Fetches the Omniplex movie page and extracts poster URL
- * @summary Get detailed info for a movie (poster from detail page)
+ * Fetches movie details from the Omniplex movie page
+ * @summary Get detailed info for a movie
  */
 export const GetMovieDetailsQueryParams = zod.object({
   "url": zod.coerce.string().describe('The full URL of the movie page on omniplexcinemas.co.uk')
 })
 
 export const GetMovieDetailsResponse = zod.object({
-  "posterUrl": zod.string().nullish().describe('High-res poster image URL from the movie detail page')
+  "posterUrl": zod.string().nullish().describe('High-res poster image URL from the movie detail page'),
+  "synopsis": zod.string().nullish().describe('Full movie synopsis from the movie detail page when available'),
+  "director": zod.string().nullish().describe('Movie director when available'),
+  "starring": zod.string().nullish().describe('Starring cast when available'),
+  "additionalInfo": zod.array(zod.object({
+  "label": zod.string(),
+  "value": zod.string()
+})).optional().describe('Other available movie metadata from the movie detail page')
 })
-
-

@@ -1,8 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Ban, ExternalLink, Clock, Film, Play, Tag } from 'lucide-react';
 import type { CinemaMovie } from '@workspace/api-client-react';
 import { CertificateBadge } from './CertificateBadge';
 import { timeToMinutes } from '@/hooks/use-time-filter';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface ShowtimeButtonProps {
   time: string;
@@ -59,37 +65,16 @@ interface MovieResultProps {
 export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: MovieResultProps) {
   const [imageError, setImageError] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [synopsisExpanded, setSynopsisExpanded] = useState(false);
-  const [synopsisCanExpand, setSynopsisCanExpand] = useState(false);
-  const synopsisRef = useRef<HTMLParagraphElement>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const { certificate, durationMinutes, synopsis, trailerUrl, genres } = movie;
 
   useEffect(() => {
     setVisible(false);
     setImageError(false);
-    setSynopsisExpanded(false);
+    setDetailsOpen(false);
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, [movie.id]);
-
-  useEffect(() => {
-    const element = synopsisRef.current;
-    if (!element) {
-      setSynopsisCanExpand(false);
-      return;
-    }
-
-    const measureOverflow = () => {
-      if (!synopsisExpanded) {
-        setSynopsisCanExpand(element.scrollHeight > element.clientHeight + 1);
-      }
-    };
-
-    measureOverflow();
-    const observer = new ResizeObserver(measureOverflow);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [synopsis, synopsisExpanded]);
 
   const posterUrl = movie.posterUrl;
 
@@ -100,6 +85,30 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
   }
 
   const youtubeId = getYouTubeId(trailerUrl);
+  const additionalInfo = (movie.additionalInfo ?? []).filter(
+    (item) =>
+      !["director", "starring", "cast", "actor", "actors"].includes(
+        item.label.toLowerCase()
+      ) &&
+      !(
+        (genres?.length && ["genre", "genres"].includes(item.label.toLowerCase())) ||
+        (durationMinutes != null && item.label.toLowerCase() === "runtime") ||
+        (certificate &&
+          ["certificate", "certification", "rating", "classification"].includes(
+            item.label.toLowerCase()
+          ))
+      )
+  );
+  const detailItems = [
+    ...(movie.director ? [{ label: 'Director', value: movie.director }] : []),
+    ...(movie.starring ? [{ label: 'Starring', value: movie.starring }] : []),
+    ...(genres?.length ? [{ label: 'Genres', value: genres.join(', ') }] : []),
+    ...(durationMinutes != null
+      ? [{ label: 'Runtime', value: formatDuration(durationMinutes) }]
+      : []),
+    ...(certificate ? [{ label: 'Rating', value: certificate }] : []),
+    ...additionalInfo,
+  ];
 
   const isShowtimeInWindow = (time: string) => {
     const start = timeToMinutes(startTime);
@@ -213,31 +222,26 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
             </div>
 
             {/* Synopsis */}
-            {synopsis && (
-              <div>
+            <div>
+              {synopsis && (
                 <p
-                  ref={synopsisRef}
-                  id="movie-synopsis"
-                  className={`text-sm leading-relaxed ${synopsisExpanded ? '' : 'line-clamp-4'}`}
+                  className="text-sm leading-relaxed line-clamp-4"
                   style={{ color: '#999' }}
                   data-testid="text-synopsis"
                 >
                   {synopsis}
                 </p>
-                {synopsisCanExpand && (
-                  <button
-                    type="button"
-                    aria-expanded={synopsisExpanded}
-                    aria-controls="movie-synopsis"
-                    onClick={() => setSynopsisExpanded((expanded) => !expanded)}
-                    className="mt-2 text-sm font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                    style={{ color: '#FFEA00' }}
-                  >
-                    {synopsisExpanded ? 'Show less' : 'Read more'}
-                  </button>
-                )}
-              </div>
-            )}
+              )}
+              <button
+                type="button"
+                onClick={() => setDetailsOpen(true)}
+                className="mt-2 text-sm font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{ color: '#FFEA00' }}
+                data-testid="button-movie-details"
+              >
+                {synopsis ? 'Read full description & details' : 'View movie details'}
+              </button>
+            </div>
 
             {/* Trailer */}
             {youtubeId && (
@@ -297,6 +301,66 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
           </div>
         </div>
       </div>
+
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent
+          className="w-[calc(100%-2rem)] max-h-[85vh] max-w-2xl overflow-hidden border-0 bg-transparent p-0 shadow-none sm:w-full"
+          data-testid="dialog-movie-details"
+        >
+          <div
+            className="flex max-h-[85vh] flex-col overflow-hidden rounded-xl"
+            style={{
+              background: '#111',
+              border: '1px solid #222',
+              boxShadow: '0 32px 80px rgba(0,0,0,0.8)',
+            }}
+          >
+            <div
+              className="flex flex-shrink-0 items-center gap-3 px-5 py-4 pr-14"
+              style={{ borderBottom: '1px solid #222' }}
+            >
+              <Film size={17} style={{ color: '#FFEA00' }} />
+              <div className="min-w-0">
+                <DialogTitle className="truncate text-base font-semibold" style={{ color: '#fff' }}>
+                  {movie.title}
+                </DialogTitle>
+                <DialogDescription className="mt-1 text-xs" style={{ color: '#666' }}>
+                  Movie details from Omniplex
+                </DialogDescription>
+              </div>
+            </div>
+
+            <div className="min-h-0 overflow-y-auto p-5" data-testid="movie-details-content">
+              <section>
+                <h3 className="mb-2 text-xs font-medium uppercase tracking-widest" style={{ color: '#777' }}>
+                  Synopsis
+                </h3>
+                <p className="whitespace-pre-line text-sm leading-relaxed" style={{ color: '#bbb' }}>
+                  {synopsis || 'No synopsis is available for this movie.'}
+                </p>
+              </section>
+
+              {detailItems.length > 0 && (
+                <section className="mt-6" aria-label="Movie information">
+                  <h3 className="mb-3 text-xs font-medium uppercase tracking-widest" style={{ color: '#777' }}>
+                    Movie information
+                  </h3>
+                  <dl className="space-y-3">
+                    {detailItems.map((item) => (
+                      <div key={`${item.label}-${item.value}`}>
+                        <dt className="text-xs" style={{ color: '#666' }}>{item.label}</dt>
+                        <dd className="mt-0.5 text-sm leading-relaxed" style={{ color: '#bbb' }}>
+                          {item.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

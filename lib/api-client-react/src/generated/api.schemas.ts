@@ -49,10 +49,25 @@ export interface CinemaMovie {
   /** List of genres e.g. ['Action', 'Adventure'] */
   genres: string[];
   /**
-     * Short synopsis from the listings page
+     * Full movie synopsis when available, otherwise the listings synopsis
      * @nullable
      */
   synopsis?: string | null;
+  /**
+     * Movie director when available
+     * @nullable
+     */
+  director?: string | null;
+  /**
+     * Starring cast when available
+     * @nullable
+     */
+  starring?: string | null;
+  /** Other available movie metadata from the movie detail page */
+  additionalInfo?: {
+    label: string;
+    value: string;
+  }[];
   /**
      * YouTube trailer URL extracted from the listings page
      * @nullable
@@ -73,6 +88,26 @@ export interface MovieDetails {
      * @nullable
      */
   posterUrl?: string | null;
+  /**
+     * Full movie synopsis from the movie detail page when available
+     * @nullable
+     */
+  synopsis?: string | null;
+  /**
+     * Movie director when available
+     * @nullable
+     */
+  director?: string | null;
+  /**
+     * Starring cast when available
+     * @nullable
+     */
+  starring?: string | null;
+  /** Other available movie metadata from the movie detail page */
+  additionalInfo?: {
+    label: string;
+    value: string;
+  }[];
 }
 
 export type GetShowtimesParams = {
@@ -88,4 +123,3 @@ export type GetMovieDetailsParams = {
  */
 url: string;
 };
-

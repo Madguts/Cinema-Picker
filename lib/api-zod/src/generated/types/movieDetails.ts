@@ -12,4 +12,24 @@ export interface MovieDetails {
      * @nullable
      */
   posterUrl?: string | null;
+  /**
+     * Full movie synopsis from the movie detail page when available
+     * @nullable
+     */
+  synopsis?: string | null;
+  /**
+     * Movie director when available
+     * @nullable
+     */
+  director?: string | null;
+  /**
+     * Starring cast when available
+     * @nullable
+     */
+  starring?: string | null;
+  /** Other available movie metadata from the movie detail page */
+  additionalInfo?: {
+    label: string;
+    value: string;
+  }[];
 }
