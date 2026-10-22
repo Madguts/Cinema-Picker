@@ -1,15 +1,14 @@
-# [Project name]
+# Cinema Picker
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A movie roulette for choosing a film playing at Omniplex Lisburn.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/cinema-roulette run dev` — refresh showtimes and run the website
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
 
@@ -22,24 +21,31 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/cinema-roulette/` — React/Vite frontend and static build.
+- `artifacts/api-server/src/lib/omniplex-scraper.ts` — showtime scraper reused by the static data generator.
+- `artifacts/api-server/src/generate-showtimes.ts` — generates static JSON for the next eleven days.
+- `.github/workflows/deploy-pages.yml` — GitHub Pages build, scheduled refresh, and deployment.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- GitHub Pages serves the frontend and generated showtime JSON; it cannot run the Express API.
+- Showtimes refresh at deploy time and on a six-hour schedule.
+- Browser preferences, including vetoes, stay local to the user's browser.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Choose a movie by day and time window, browse available movies, veto films,
+and follow direct Omniplex booking links.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+Preserve the current roulette, showtime filtering, movie details, and veto experience.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The static build needs access to Omniplex to generate showtimes for the next eleven days.
+- For a project site, Vite's `BASE_PATH` must include the repository name and trailing slash.
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- `README.md` contains local run and GitHub Pages deployment instructions.

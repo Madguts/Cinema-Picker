@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { format, startOfDay } from 'date-fns';
 import { AlertCircle, Film, Ban } from 'lucide-react';
-import { useGetShowtimes, getGetShowtimesQueryKey } from '@workspace/api-client-react';
 import type { CinemaMovie } from '@workspace/api-client-react';
+import { useShowtimes } from '@/hooks/use-showtimes';
 import { useVetoes } from '@/hooks/use-vetoes';
 import { useTimeFilter } from '@/hooks/use-time-filter';
 import { DayPicker } from '@/components/DayPicker';
@@ -39,14 +39,7 @@ export default function HomePage() {
   const { vetoes, isVetoed, addVeto, toggleVeto, clearVetoes } = useVetoes();
   const { isShowtimeInWindow } = useTimeFilter();
 
-  const { data, isLoading, error } = useGetShowtimes(
-    { date: selectedDate },
-    {
-      query: {
-        queryKey: getGetShowtimesQueryKey({ date: selectedDate }),
-      },
-    }
-  );
+  const { data, isLoading, error } = useShowtimes(selectedDate);
 
   const eligibleMovies = useMemo(() => {
     if (!data?.movies) return [];

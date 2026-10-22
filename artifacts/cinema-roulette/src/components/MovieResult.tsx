@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Ban, ExternalLink, Clock, Film, Play, Tag } from 'lucide-react';
 import type { CinemaMovie } from '@workspace/api-client-react';
-import { useGetMovieDetails, getGetMovieDetailsQueryKey } from '@workspace/api-client-react';
 import { CertificateBadge } from './CertificateBadge';
 import { timeToMinutes } from '@/hooks/use-time-filter';
 
@@ -65,18 +64,6 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
   const synopsisRef = useRef<HTMLParagraphElement>(null);
   const { certificate, durationMinutes, synopsis, trailerUrl, genres } = movie;
 
-  // Only fetch movie-details for the poster; everything else comes from the listing
-  const { data: details, isLoading: detailsLoading } = useGetMovieDetails(
-    { url: movie.detailUrl },
-    {
-      query: {
-        // Only fetch detail page if the listing didn't already give us a poster
-        enabled: !!movie.detailUrl && !movie.posterUrl,
-        queryKey: getGetMovieDetailsQueryKey({ url: movie.detailUrl }),
-      },
-    }
-  );
-
   useEffect(() => {
     setVisible(false);
     setImageError(false);
@@ -104,9 +91,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
     return () => observer.disconnect();
   }, [synopsis, synopsisExpanded]);
 
-  // Poster: listing-page poster is more reliable; only use detail-page result
-  // if we genuinely have nothing from the listing scrape.
-  const posterUrl = movie.posterUrl || details?.posterUrl;
+  const posterUrl = movie.posterUrl;
 
   function getYouTubeId(url: string | null | undefined): string | null {
     if (!url) return null;
@@ -161,13 +146,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
                   className="w-full h-full flex items-center justify-center p-8"
                   style={{ background: '#0d0d0d', minHeight: '300px' }}
                 >
-                  {detailsLoading ? (
-                    <div style={{ color: '#333' }}>
-                      <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin mx-auto" style={{ borderColor: '#333', borderTopColor: 'transparent' }} />
-                    </div>
-                  ) : (
-                    <Film size={48} style={{ color: '#2a2a2a' }} />
-                  )}
+                  <Film size={48} style={{ color: '#2a2a2a' }} />
                 </div>
               )}
             </div>

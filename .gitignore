@@ -47,3 +47,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Generated at build time for static hosting
+/artifacts/cinema-roulette/public/data/showtimes/
