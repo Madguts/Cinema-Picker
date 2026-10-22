@@ -443,6 +443,7 @@ export async function scrapeMovieDetails(
   }
 
   const synopsisSelectors = [
+    ".moviesCard > .mb-4 > p.text",
     '[itemprop="description"]',
     ".synopsis-long",
     ".film-synopsis",
