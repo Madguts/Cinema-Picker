@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Ban, Check } from 'lucide-react';
-import type { CinemaMovie } from '@workspace/api-client-react';
+import type { CinemaMovie } from '@/lib/types';
 import { CertificateBadge } from './CertificateBadge';
 
 interface MoviePosterCardProps {
@@ -19,8 +19,6 @@ export function MoviePosterCard({
   animationDelay = 0,
 }: MoviePosterCardProps) {
   const [imageError, setImageError] = useState(false);
-
-  const sortTitle = movie.title.replace(/^(The |A |An )/i, '');
 
   return (
     <div
@@ -122,12 +120,9 @@ export function MoviePosterCard({
           )}
         </div>
         <div className="text-xs mt-1" style={{ color: 'hsl(34 20% 40%)', fontSize: '10px' }}>
-          {sortTitle !== movie.title && (
-            <span className="opacity-60">{movie.showtimes.length} showing{movie.showtimes.length !== 1 ? 's' : ''}</span>
-          )}
-          {sortTitle === movie.title && (
-            <span className="opacity-60">{movie.showtimes.length} showing{movie.showtimes.length !== 1 ? 's' : ''}</span>
-          )}
+          <span className="opacity-60">
+            {movie.showtimes.length} showing{movie.showtimes.length !== 1 ? 's' : ''}
+          </span>
         </div>
       </div>
 

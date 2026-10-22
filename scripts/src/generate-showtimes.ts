@@ -1,13 +1,12 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { logger } from './lib/logger';
-import { scrapeMovieDetails, scrapeShowtimes } from './lib/omniplex-scraper';
-import type { ScrapedMovieDetails } from './lib/omniplex-scraper';
+import { scrapeMovieDetails, scrapeShowtimes } from './omniplex-scraper';
+import type { ScrapedMovieDetails } from './omniplex-scraper';
 
 const DAYS_TO_GENERATE = 11;
 const outputDirectory = resolve(
   import.meta.dirname,
-  '../../cinema-roulette/public/data/showtimes',
+  '../../artifacts/cinema-roulette/public/data/showtimes',
 );
 
 function getLisburnDate(): string {
@@ -47,7 +46,7 @@ for (let offset = 0; offset < DAYS_TO_GENERATE; offset += 1) {
     let detailsPromise = movieDetailsByUrl.get(movie.detailUrl);
     if (!detailsPromise) {
       detailsPromise = scrapeMovieDetails(movie.detailUrl).catch((err) => {
-        logger.warn({ err, url: movie.detailUrl }, 'Failed to fetch movie details');
+        console.warn(`Failed to fetch movie details for ${movie.detailUrl}`, err);
         return null;
       });
       movieDetailsByUrl.set(movie.detailUrl, detailsPromise);

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ShowtimesResponse } from '@workspace/api-client-react';
+import type { ShowtimesResponse } from '@/lib/types';
 
 export function useShowtimes(date: string) {
   return useQuery({

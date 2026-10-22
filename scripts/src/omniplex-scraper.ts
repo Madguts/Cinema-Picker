@@ -1,5 +1,4 @@
 import * as cheerio from "cheerio";
-import { logger } from "./logger";
 
 const BASE_URL = "https://www.omniplexcinemas.co.uk";
 const CINEMA_SLUG = "lisburn";
@@ -166,47 +165,41 @@ function parseCertificateFromSrc(src: string): string | null {
 }
 
 async function fetchOmniplexPage(date?: string): Promise<string> {
-  if (date) {
-    // Omniplex uses a POST form to change the date
-    const body = new URLSearchParams({
-      action: "processFilters",
-      filterDate: date,
-    });
-    const response = await fetch(SHOWTIMES_URL, {
-      method: "POST",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-GB,en;q=0.9",
-      },
-      body: body.toString(),
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} fetching Omniplex for date ${date}`);
-    }
-    return response.text();
-  } else {
-    const response = await fetch(SHOWTIMES_URL, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-GB,en;q=0.9",
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} fetching Omniplex showtimes`);
-    }
-    return response.text();
+  const headers: Record<string, string> = {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    Accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-GB,en;q=0.9",
+  };
+  const response = await fetch(
+    SHOWTIMES_URL,
+    date
+      ? {
+          method: "POST",
+          headers: {
+            ...headers,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            action: "processFilters",
+            filterDate: date,
+          }),
+        }
+      : { headers },
+  );
+  if (!response.ok) {
+    throw new Error(
+      date
+        ? `HTTP ${response.status} fetching Omniplex for date ${date}`
+        : `HTTP ${response.status} fetching Omniplex showtimes`,
+    );
   }
+  return response.text();
 }
 
 export async function scrapeShowtimes(date?: string): Promise<ScrapedMovie[]> {
-  logger.info({ date, url: SHOWTIMES_URL }, "Fetching Omniplex showtimes");
+  console.info(`Fetching Omniplex showtimes${date ? ` for ${date}` : ""}`);
 
   const html = await fetchOmniplexPage(date);
   const $ = cheerio.load(html);
@@ -371,14 +364,14 @@ export async function scrapeShowtimes(date?: string): Promise<ScrapedMovie[]> {
     });
   });
 
-  logger.info({ count: movies.length, date }, "Scraped movies");
+  console.info(`Scraped ${movies.length} movies${date ? ` for ${date}` : ""}`);
   return movies;
 }
 
 export async function scrapeMovieDetails(
   detailUrl: string
 ): Promise<ScrapedMovieDetails> {
-  logger.info({ detailUrl }, "Fetching movie detail page");
+  console.info(`Fetching movie detail page: ${detailUrl}`);
 
   const response = await fetch(detailUrl, {
     headers: {
@@ -393,15 +386,17 @@ export async function scrapeMovieDetails(
   const html = await response.text();
   const $ = cheerio.load(html);
 
-  let movieSchema: JsonObject | null = null;
+  const movieSchemas: JsonObject[] = [];
   $('script[type="application/ld+json"]').each((_index, element) => {
     try {
       const parsed: unknown = JSON.parse($(element).text());
-      movieSchema ??= findMovieSchema(parsed);
+      const schema = findMovieSchema(parsed);
+      if (schema) movieSchemas.push(schema);
     } catch {
       // Ignore malformed structured data and continue with the page markup.
     }
   });
+  const movieSchema = movieSchemas[0] ?? null;
 
   let posterUrl: string | null = null;
 
