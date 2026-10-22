@@ -58,8 +58,8 @@ paths:
     get:
       operationId: getMovieDetails
       tags: [cinema]
-      summary: Get detailed info for a movie (poster from detail page)
-      description: Fetches the Omniplex movie page and extracts poster URL
+      summary: Get detailed info for a movie
+      description: Fetches movie details from the Omniplex movie page
       parameters:
         - name: url
           in: query
@@ -69,7 +69,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Movie details including poster URL
+          description: Movie details including the synopsis and available metadata
           content:
             application/json:
               schema:
@@ -148,7 +148,26 @@ components:
           description: List of genres e.g. ['Action', 'Adventure']
         synopsis:
           type: ["string", "null"]
-          description: Short synopsis from the listings page
+          description: Full movie synopsis when available, otherwise the listings synopsis
+        director:
+          type: ["string", "null"]
+          description: Movie director when available
+        starring:
+          type: ["string", "null"]
+          description: Starring cast when available
+        additionalInfo:
+          type: array
+          description: Other available movie metadata from the movie detail page
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              value:
+                type: string
+            required:
+              - label
+              - value
         trailerUrl:
           type: ["string", "null"]
           description: YouTube trailer URL extracted from the listings page
@@ -183,4 +202,26 @@ components:
         posterUrl:
           type: ["string", "null"]
           description: High-res poster image URL from the movie detail page
+        synopsis:
+          type: ["string", "null"]
+          description: Full movie synopsis from the movie detail page when available
+        director:
+          type: ["string", "null"]
+          description: Movie director when available
+        starring:
+          type: ["string", "null"]
+          description: Starring cast when available
+        additionalInfo:
+          type: array
+          description: Other available movie metadata from the movie detail page
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              value:
+                type: string
+            required:
+              - label
+              - value
       required: []

@@ -4,6 +4,25 @@ import { logger } from "./logger";
 const BASE_URL = "https://www.omniplexcinemas.co.uk";
 const CINEMA_SLUG = "lisburn";
 const SHOWTIMES_URL = `${BASE_URL}/cinema/showtimes/${CINEMA_SLUG}`;
+const MOVIE_DETAIL_LABELS = new Set([
+  "director",
+  "starring",
+  "cast",
+  "actor",
+  "actors",
+  "genre",
+  "genres",
+  "runtime",
+  "release date",
+  "released",
+  "certificate",
+  "certification",
+  "rating",
+  "language",
+  "country",
+  "format",
+  "classification",
+]);
 
 export interface ScrapedShowtime {
   time: string;
@@ -20,12 +39,98 @@ export interface ScrapedMovie {
   certificate: string | null;
   genres: string[];
   synopsis: string | null;
+  director?: string | null;
+  starring?: string | null;
+  additionalInfo?: Array<{ label: string; value: string }>;
   trailerUrl: string | null;
   showtimes: ScrapedShowtime[];
 }
 
 export interface ScrapedMovieDetails {
   posterUrl: string | null;
+  synopsis: string | null;
+  director: string | null;
+  starring: string | null;
+  additionalInfo: Array<{ label: string; value: string }>;
+}
+
+type JsonObject = Record<string, unknown>;
+
+function findMovieSchema(value: unknown): JsonObject | null {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findMovieSchema(item);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  if (typeof value !== "object" || value === null) return null;
+  const object = value as JsonObject;
+  const type = object["@type"];
+  if (
+    (typeof type === "string" && type.toLowerCase().includes("movie")) ||
+    (Array.isArray(type) &&
+      type.some((item) => typeof item === "string" && item.toLowerCase().includes("movie")))
+  ) {
+    return object;
+  }
+
+  for (const child of Object.values(object)) {
+    const found = findMovieSchema(child);
+    if (found) return found;
+  }
+  return null;
+}
+
+function structuredText(value: unknown): string | null {
+  if (typeof value === "string") return value.trim() || null;
+  if (Array.isArray(value)) {
+    const parts = value.map(structuredText).filter((part): part is string => Boolean(part));
+    return parts.length > 0 ? parts.join(", ") : null;
+  }
+  if (typeof value === "object" && value !== null) {
+    const object = value as JsonObject;
+    return structuredText(object.name ?? object.value);
+  }
+  return null;
+}
+
+function extractMovieDetailRows(
+  $: cheerio.CheerioAPI
+): Array<{ label: string; value: string }> {
+  const rows = new Map<string, { label: string; value: string }>();
+  const addRow = (rawLabel: string, rawValue: string) => {
+    const label = rawLabel.trim().replace(/\s+/g, " ").replace(/:$/, "");
+    const value = rawValue.trim().replace(/\s+/g, " ");
+    if (
+      !label ||
+      !value ||
+      label.length > 60 ||
+      value.length > 500 ||
+      !MOVIE_DETAIL_LABELS.has(label.toLowerCase())
+    ) {
+      return;
+    }
+    rows.set(label.toLowerCase(), { label, value });
+  };
+
+  $("dt").each((_index, element) => {
+    const $term = $(element);
+    addRow($term.text(), $term.nextAll("dd").first().text());
+  });
+  $("th").each((_index, element) => {
+    const $heading = $(element);
+    addRow($heading.text(), $heading.nextAll("td").first().text());
+  });
+  $("p, li, div, span").each((_index, element) => {
+    const text = $(element).text().trim().replace(/\s+/g, " ");
+    if (text.length > 600) return;
+    const match = text.match(/^([a-z][a-z /&-]{0,59})\s*:\s*(.+)$/i);
+    if (match) addRow(match[1], match[2]);
+  });
+
+  return [...rows.values()];
 }
 
 function slugify(title: string): string {
@@ -273,7 +378,7 @@ export async function scrapeShowtimes(date?: string): Promise<ScrapedMovie[]> {
 export async function scrapeMovieDetails(
   detailUrl: string
 ): Promise<ScrapedMovieDetails> {
-  logger.info({ detailUrl }, "Fetching movie detail page for poster");
+  logger.info({ detailUrl }, "Fetching movie detail page");
 
   const response = await fetch(detailUrl, {
     headers: {
@@ -287,6 +392,16 @@ export async function scrapeMovieDetails(
   }
   const html = await response.text();
   const $ = cheerio.load(html);
+
+  let movieSchema: JsonObject | null = null;
+  $('script[type="application/ld+json"]').each((_index, element) => {
+    try {
+      const parsed: unknown = JSON.parse($(element).text());
+      movieSchema ??= findMovieSchema(parsed);
+    } catch {
+      // Ignore malformed structured data and continue with the page markup.
+    }
+  });
 
   let posterUrl: string | null = null;
 
@@ -327,5 +442,74 @@ export async function scrapeMovieDetails(
     });
   }
 
-  return { posterUrl };
+  const synopsisSelectors = [
+    '[itemprop="description"]',
+    ".synopsis-long",
+    ".film-synopsis",
+    ".movie-synopsis",
+    ".synopsis",
+    '[class*="synopsis"]',
+  ];
+  let synopsis: string | null = null;
+  for (const selector of synopsisSelectors) {
+    const text = $(selector).not(".synopsis-short").first().text().trim();
+    if (text) {
+      synopsis = text;
+      break;
+    }
+  }
+  synopsis ??= structuredText(movieSchema?.description);
+  synopsis ??=
+    $('meta[property="og:description"]').attr("content")?.trim() ||
+    $('meta[name="description"]').attr("content")?.trim() ||
+    null;
+
+  const detailRows = extractMovieDetailRows($);
+  const schemaGenres = structuredText(movieSchema?.genre);
+  if (schemaGenres && !detailRows.some((row) => row.label.toLowerCase() === "genres")) {
+    detailRows.push({ label: "Genres", value: schemaGenres });
+  }
+  const schemaDetails: Array<{ label: string; value: string | null }> = [
+    { label: "Release date", value: structuredText(movieSchema?.datePublished) },
+    { label: "Runtime", value: structuredText(movieSchema?.duration) },
+    { label: "Certificate", value: structuredText(movieSchema?.contentRating) },
+    { label: "Language", value: structuredText(movieSchema?.inLanguage) },
+    { label: "Country", value: structuredText(movieSchema?.countryOfOrigin) },
+  ];
+  for (const row of schemaDetails) {
+    if (
+      row.value &&
+      !detailRows.some((detail) => detail.label.toLowerCase() === row.label.toLowerCase())
+    ) {
+      detailRows.push({ label: row.label, value: row.value });
+    }
+  }
+
+  const rowValue = (...labels: string[]) =>
+    detailRows.find((row) => labels.includes(row.label.toLowerCase()))?.value ?? null;
+  const itempropValue = (property: string) => {
+    const values = $(`[itemprop="${property}"]`)
+      .map((_index, element) => {
+        const $element = $(element);
+        return (
+          $element.attr("content")?.trim() ||
+          $element.attr("name")?.trim() ||
+          $element.text().trim()
+        );
+      })
+      .get()
+      .filter(Boolean);
+    return values.length > 0 ? values.join(", ") : null;
+  };
+  const director =
+    structuredText(movieSchema?.director) ?? rowValue("director") ?? itempropValue("director");
+  const starring =
+    structuredText(movieSchema?.actor) ??
+    rowValue("starring", "cast", "actor", "actors") ??
+    itempropValue("actor");
+  const additionalInfo = detailRows.filter(
+    (row) => !["director", "starring", "cast", "actor", "actors"].includes(row.label.toLowerCase())
+  );
+
+  return { posterUrl, synopsis, director, starring, additionalInfo };
 }
