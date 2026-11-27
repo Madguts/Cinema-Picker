@@ -21,7 +21,7 @@ the website to `artifacts/cinema-roulette/dist/public`.
 
 The `Deploy Cinema Picker to GitHub Pages` workflow builds and deploys the
 website when changes are pushed to `main`, and refreshes its showtime data
-every six hours. It can also be started manually from the Actions tab.
+every hour. It can also be started manually from the Actions tab.
 Enable GitHub Pages for the repository with **GitHub Actions** as the build
 and deployment source.
 

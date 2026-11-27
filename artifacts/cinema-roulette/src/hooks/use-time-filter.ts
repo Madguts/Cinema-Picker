@@ -25,6 +25,7 @@ export function useTimeFilter() {
 
       if (showtime.endTime) {
         const showtimeEnd = timeToMinutes(showtime.endTime);
+        if (showtimeEnd < showtimeStart) return false;
         return showtimeEnd <= end;
       }
 

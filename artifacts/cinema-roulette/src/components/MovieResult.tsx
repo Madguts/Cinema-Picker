@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Ban, ExternalLink, Clock, Film, Play, Tag } from 'lucide-react';
 import type { CinemaMovie } from '@/lib/types';
 import { CertificateBadge } from './CertificateBadge';
-import { timeToMinutes } from '@/hooks/use-time-filter';
+import { useTimeFilter } from '@/hooks/use-time-filter';
 import {
   Dialog,
   DialogContent,
@@ -67,6 +67,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
   const [visible, setVisible] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const { certificate, durationMinutes, synopsis, trailerUrl, genres } = movie;
+  const { isShowtimeInWindow } = useTimeFilter();
 
   useEffect(() => {
     setVisible(false);
@@ -109,12 +110,6 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
     ...(certificate ? [{ label: 'Rating', value: certificate }] : []),
     ...additionalInfo,
   ];
-
-  const isShowtimeInWindow = (time: string) => {
-    const start = timeToMinutes(startTime);
-    const end = timeToMinutes(endTime);
-    return timeToMinutes(time) >= start && timeToMinutes(time) <= end;
-  };
 
   return (
     <div
@@ -280,7 +275,7 @@ export function MovieResult({ movie, onVeto, isSpinning, startTime, endTime }: M
                     time={showtime.time}
                     endTime={showtime.endTime}
                     bookingUrl={showtime.bookingUrl}
-                    inWindow={isShowtimeInWindow(showtime.time)}
+                    inWindow={isShowtimeInWindow(showtime, startTime, endTime)}
                   />
                 ))}
               </div>
