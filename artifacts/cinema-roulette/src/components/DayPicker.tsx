@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { format, addDays, startOfDay, isToday } from 'date-fns';
+import { getLisburnDate } from '@/lib/utils';
 
 interface DayPickerProps {
   selectedDate: string; // YYYY-MM-DD
@@ -8,22 +8,23 @@ interface DayPickerProps {
 
 export function DayPicker({ selectedDate, onDateChange }: DayPickerProps) {
   const days = useMemo(() => {
-    const today = startOfDay(new Date());
+    const [year, month, day] = getLisburnDate().split('-').map(Number);
     return Array.from({ length: 10 }, (_, i) => {
-      const date = addDays(today, i);
+      const date = new Date(Date.UTC(year, month - 1, day + i));
       return {
-        date,
-        iso: format(date, 'yyyy-MM-dd'),
-        dayName: isToday(date) ? 'Today' : format(date, 'EEE'),
-        dayNum: format(date, 'd'),
-        monthName: format(date, 'MMM'),
+        iso: date.toISOString().slice(0, 10),
+        dayName: i === 0
+          ? 'Today'
+          : new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' }).format(date),
+        dayNum: new Intl.DateTimeFormat('en-GB', { day: 'numeric', timeZone: 'UTC' }).format(date),
+        monthName: new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' }).format(date),
       };
     });
   }, []);
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" data-testid="day-picker">
-      {days.map(({ date: _date, iso, dayName, dayNum, monthName }) => {
+      {days.map(({ iso, dayName, dayNum, monthName }) => {
         const isSelected = iso === selectedDate;
         return (
           <button

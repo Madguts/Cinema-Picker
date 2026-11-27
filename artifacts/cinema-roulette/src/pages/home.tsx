@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback } from 'react';
-import { format, startOfDay } from 'date-fns';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AlertCircle, Film, Ban } from 'lucide-react';
 import type { CinemaMovie } from '@/lib/types';
+import { getLisburnDate, getLisburnTime } from '@/lib/utils';
 import { useShowtimes } from '@/hooks/use-showtimes';
 import { useVetoes } from '@/hooks/use-vetoes';
 import { useTimeFilter } from '@/hooks/use-time-filter';
@@ -11,26 +11,27 @@ import { SpinButton } from '@/components/SpinButton';
 import { MovieResult } from '@/components/MovieResult';
 import { VetoModal } from '@/components/VetoModal';
 
-function getDefaultDate(): string {
-  return format(startOfDay(new Date()), 'yyyy-MM-dd');
-}
-
-function getDefaultStartTime(): string {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const defaultMinutes = 17 * 60 + 20; // 17:20
-  const minutes = Math.max(currentMinutes, defaultMinutes);
+function getDefaultTimeRange(): { start: string; end: string } {
+  const [hours, minutes] = getLisburnTime().split(':').map(Number);
+  const currentMinutes = hours * 60 + minutes;
+  const defaultStartMinutes = 17 * 60 + 20;
   // Round up to nearest 10 minutes to match the slider step
-  const rounded = Math.ceil(minutes / 10) * 10;
-  const h = Math.floor(rounded / 60);
-  const m = rounded % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  const rounded = Math.ceil(Math.max(currentMinutes, defaultStartMinutes) / 10) * 10;
+  const startMinutes = Math.min(rounded, 23 * 60 + 20);
+  const endMinutes = Math.min(23 * 60 + 30, Math.max(22 * 60, startMinutes + 90));
+  const toTime = (minutes: number) => {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  };
+  return { start: toTime(startMinutes), end: toTime(endMinutes) };
 }
 
 export default function HomePage() {
-  const [selectedDate, setSelectedDate] = useState(getDefaultDate);
-  const [startTime, setStartTime] = useState(getDefaultStartTime);
-  const [endTime, setEndTime] = useState('22:00');
+  const [defaultTimeRange] = useState(getDefaultTimeRange);
+  const [selectedDate, setSelectedDate] = useState(getLisburnDate);
+  const [startTime, setStartTime] = useState(defaultTimeRange.start);
+  const [endTime, setEndTime] = useState(defaultTimeRange.end);
   const [pickedMovie, setPickedMovie] = useState<CinemaMovie | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinCount, setSpinCount] = useState(0);
@@ -49,11 +50,22 @@ export default function HomePage() {
     });
   }, [data?.movies, vetoes, startTime, endTime, isVetoed, isShowtimeInWindow]);
 
+  useEffect(() => {
+    if (!pickedMovie) return;
+    const currentMovie = eligibleMovies.find((movie) => movie.id === pickedMovie.id);
+    if (!currentMovie) {
+      setPickedMovie(null);
+    } else if (currentMovie !== pickedMovie) {
+      setPickedMovie(currentMovie);
+    }
+  }, [eligibleMovies, pickedMovie]);
+
   const pickRandom = useCallback(
     (exclude?: string) => {
-      const pool = exclude
+      const preferredPool = exclude
         ? eligibleMovies.filter((m) => m.id !== exclude)
         : eligibleMovies;
+      const pool = preferredPool.length > 0 ? preferredPool : eligibleMovies;
       if (pool.length === 0) return null;
       return pool[Math.floor(Math.random() * pool.length)];
     },
