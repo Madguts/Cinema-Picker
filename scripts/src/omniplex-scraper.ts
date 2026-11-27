@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 
 const BASE_URL = "https://www.omniplexcinemas.co.uk";
 const CINEMA_SLUG = "lisburn";
+const CINEMA_SITE_CODE = "OMP_LISB";
 const SHOWTIMES_URL = `${BASE_URL}/cinema/showtimes/${CINEMA_SLUG}`;
 const MOVIE_DETAIL_LABELS = new Set([
   "director",
@@ -93,6 +94,12 @@ function structuredText(value: unknown): string | null {
     return structuredText(object.name ?? object.value);
   }
   return null;
+}
+
+export function isGenericOmniplexDescription(description: string): boolean {
+  return /\bplaying at Omniplex(?:\s+[^.]+)?\.\s*Browse showtimes and book your tickets online today!?$/i.test(
+    description.replace(/\s+/g, " ").trim(),
+  );
 }
 
 function extractMovieDetailRows(
@@ -273,7 +280,11 @@ export async function scrapeShowtimes(date?: string): Promise<ScrapedMovie[]> {
 
     // ---- Synopsis ----
     const synopsisEl = outerGrid.find(".synopsis-short, span.synopsis-short");
-    const synopsis = synopsisEl.text().trim() || null;
+    const synopsisText = synopsisEl.text().trim();
+    const synopsis =
+      synopsisText && !isGenericOmniplexDescription(synopsisText)
+        ? synopsisText
+        : null;
 
     // ---- Trailer YouTube ID ----
     let trailerUrl: string | null = null;
@@ -378,6 +389,7 @@ export async function scrapeMovieDetails(
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      Cookie: `sitecode=${CINEMA_SITE_CODE}`,
     },
   });
   if (!response.ok) {
@@ -420,6 +432,13 @@ export async function scrapeMovieDetails(
     }
   }
 
+  if (!posterUrl) {
+    const openGraphPoster = $('meta[property="og:image"]').attr("content")?.trim();
+    if (openGraphPoster) {
+      posterUrl = new URL(openGraphPoster, BASE_URL).toString();
+    }
+  }
+
   // Fallback: first meaningful img on the page
   if (!posterUrl) {
     $("img").each((_i, el): false | void => {
@@ -429,6 +448,7 @@ export async function scrapeMovieDetails(
         !src.includes("/svgs/") &&
         !src.includes("/images/icons/") &&
         !src.includes("/images/ratings/") &&
+        !src.includes("/assets/branding/") &&
         !src.endsWith(".svg")
       ) {
         posterUrl = src.startsWith("http") ? src : BASE_URL + src;
@@ -459,6 +479,9 @@ export async function scrapeMovieDetails(
     $('meta[property="og:description"]').attr("content")?.trim() ||
     $('meta[name="description"]').attr("content")?.trim() ||
     null;
+  if (synopsis && isGenericOmniplexDescription(synopsis)) {
+    synopsis = null;
+  }
 
   const detailRows = extractMovieDetailRows($);
   const schemaGenres = structuredText(movieSchema?.genre);
