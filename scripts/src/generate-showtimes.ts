@@ -56,9 +56,17 @@ for (let offset = 0; offset < DAYS_TO_GENERATE; offset += 1) {
     if (!details) continue;
     movie.posterUrl ??= details.posterUrl;
     movie.synopsis = details.synopsis ?? movie.synopsis;
-    movie.director = details.director;
-    movie.starring = details.starring;
-    movie.additionalInfo = details.additionalInfo;
+    movie.director ??= details.director;
+    movie.starring ??= details.starring;
+    if (details.additionalInfo.length > 0) {
+      const additionalInfoByLabel = new Map(
+        (movie.additionalInfo ?? []).map((item) => [item.label.toLowerCase(), item]),
+      );
+      for (const item of details.additionalInfo) {
+        additionalInfoByLabel.set(item.label.toLowerCase(), item);
+      }
+      movie.additionalInfo = [...additionalInfoByLabel.values()];
+    }
   }
 
   const payload = JSON.stringify({ date, movies }, null, 2);

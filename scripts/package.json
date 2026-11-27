@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "generate-showtimes": "tsx ./src/generate-showtimes.ts",
+    "test": "tsx --test src/omniplex-scraper.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
